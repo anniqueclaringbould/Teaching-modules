@@ -5,7 +5,7 @@ Teaching modules given by the UMCG department of Genetics
 ### Introduction to R
 * [R course - day 1]
 * [R course - day 2](R-course/statistics.html)
-* [R course - day 3]
+* [R course - day 3](R-course/plotting.Rmd)
 
 ### Introductory topics
 * [GWAS]
