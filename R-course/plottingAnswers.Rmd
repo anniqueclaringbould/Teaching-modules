@@ -1,0 +1,107 @@
+---
+title: "ggplotAnswers"
+output: 
+  html_document:
+    toc: true # table of content true
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+---
+
+
+```{r,echo=F}
+library(ggplot2)
+```
+
+___A1. Make a scatterplot between the Petal Length and Petal Width___
+```{r, echo=F}
+ggplot(iris, aes(x=Petal.Length, y=Petal.Width)) + geom_point()
+```
+
+___A2. Make a histogram of the Sepal length___
+```{r, echo=F}
+ggplot(iris, aes(x=Sepal.Length)) + geom_histogram(binwidth = 0.05)
+```
+
+___A3. Make a boxplot of the Sepal width___
+```{r, echo=F}
+ggplot(iris, aes(x=Species, y=Sepal.Width)) + geom_boxplot()
+```
+
+```{r,echo=F}
+sepal.length.boxplot <- ggplot(iris, aes(x=Species, y=Sepal.Length)) + geom_boxplot()
+```
+
+___A4. Call the variable petal.length.boxplot to draw the plot___
+```{r, echo=F}
+sepal.length.boxplot
+```
+
+__A5. Plot boxplot + mean for Sepal width__
+
+```{r, echo=F}
+sepal.width.boxplot <- ggplot(iris, aes(x=Species, y=Sepal.Width)) + geom_boxplot()
+# First calculate the mean
+sepal.width.mean <- mean(iris$Sepal.Width)
+# Add a horizontal line to the plot
+sepal.width.boxplot + geom_hline(yintercept = sepal.width.mean, color = "red")
+```
+
+__A6. Run a t-test to determine the difference in means of sepal length between *Iris virginica* and *Iris versicolor*, and store the p-value in a variable called t.test.p.value __
+
+```{r, include=FALSE}
+t.test.p.value <- t.test(iris[iris$Species == 'virginica',]$Sepal.Length, iris[iris$Species == 'versicolor',]$Sepal.Length)$p.value
+```
+```{r}
+t.test.p.value
+```
+
+___A7. Put the text in the lower right corner___
+```{r, echo=F}
+# Round the p-value to 3 digits
+t.test.p.value <- signif(t.test.p.value, 3)
+# Create a string by pasting "p-value =" and the p-value
+p.value.label <- paste("p-value =", t.test.p.value)
+# Plot the boxplot + the annotation
+sepal.length.boxplot + annotate("text", x = 3, y = 4.5, label =  p.value.label)
+```
+
+___A8. Recreate the colored boxplot above so that the points lay on top of the boxplot. ___
+
+```{r, echo = F}
+sepal.length.boxplot <- ggplot(iris, aes(x=Species, y=Sepal.Length,fill=Species)) + 
+                        geom_boxplot()
+sepal.length.boxplot <- sepal.length.boxplot + 
+                        geom_point(position = "jitter", size=1, color=c("blue"), alpha=0.5)+ 
+                        theme(axis.title = element_text(size = 15)) + 
+                        ylab("Sepal length (cm)")
+sepal.length.boxplot
+```
+
+__A9. Use the facet_grid() function so that that the boxplots are grouped by the measured variables like the plot below __
+
+```{r, echo=F}
+library(reshape)
+iris.melt <- melt(iris, id.vars=c('Species'))
+ggplot(iris.melt, aes(x=Species, y=value)) + geom_boxplot() + facet_grid(~variable)
+```
+
+
+___A10. Use the geom_violin() function to create a similar plot like the last boxplot, grouped by the measured variables. Also, color the boxes by species and draw actual data points on top of the violin plot  ___
+```{r, echo=F}
+ggplot(iris.melt, aes(x=Species, y=value, fill=Species)) + 
+  geom_violin() + 
+  facet_grid(~variable) + 
+  geom_point(position = "jitter", alpha=0.5, size=0.8)+
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+```
+
+___A11. Redo the above plot but segment using the Species. Explain the opposite correlation___
+
+```{r,echo=F}
+ggplot(data = iris, aes(Sepal.Length, Sepal.Width)) + 
+              geom_point() + 
+              facet_grid(. ~ Species, scales = "free_x") + 
+              geom_smooth(method = "lm")
+```

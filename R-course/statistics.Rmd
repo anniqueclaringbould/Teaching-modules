@@ -1,0 +1,370 @@
+---
+title: "statistics"
+output: 
+  html_document:
+    toc: true # table of content true
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+---
+
+
+
+Open RStudio at: Start > All Programs > Mathematics & Statistics > R > Rstudio. We will use a dataset of flower petal measurements alled [Iris](https://en.wikipedia.org/wiki/Iris_flower_data_set) and a student exercise and smoking dataset to learn how to format data so that we can do several statistical tests. 
+
+
+# Exploring the data
+
+Iris is a default dataset that is included with R. You can see part of the dataset with ___head___.
+
+```{r loading dataset}
+# you can see the first few rows of a dataset by using the *function* head()
+head(iris)
+```
+
+
+As ```head(iris)``` shows there are 5 columns, 4 with [sepal](https://en.wikipedia.org/wiki/Sepal) or [petal](https://en.wikipedia.org/wiki/Petal) measurements, and one species column. However, from ```head``` it is not clear how many measurements where done and which species were used. 
+
+___Q1. How many measurments where taken, and for which species?__i_ Hint: You can select the species column with ```iris$Species``` or ```iris['Species']``` and can use the  ```table()``` function to count number of occurences (see ```?(table)``` for help). 
+
+# t-test
+
+We would like to know if the Sepal length of *Iris virginica* is longer than the petal length of *Iris versicolor*. When asking these questions usually it refers to the averages of the groups. So first, look at the mean of both groups:
+
+```{r calculating mean petal length virginica}
+# use the *function* mean()
+mean(iris[iris$Species == 'virginica',]$Petal.Length)
+```
+___Q2. What does___ ```iris[iris$Species == 'virginica',]``` ___do?___
+
+```{r calculating mean petal length versicolor}
+mean(iris[iris$Species == 'versicolor',]$Petal.Length)
+```
+
+and the difference in mean: 
+```{r diff in mean}
+# Save the difference in the *variable* diff
+diff <- mean(iris[iris$Species == 'virginica',]$Petal.Length) - mean(iris[iris$Species == 'versicolor',]$Petal.Length)
+print(diff)
+```
+
+So there is a clear difference in mean between the petal lengths of these two species. 
+
+
+__Q3. Why would we need p-values and confidence intervals if we can already see that _Iris virginica_ has a longer petal length?__ (what if you would measure the petal length of 50 different _virginica_ plants?).
+
+We have already reused ```iris[iris$Species == 'virginica',]$Petal.length``` and ```iris[iris$Species == 'versicolor',]$Petal.length``` a few times, but these long select statements are not very readable. We can put them in a variable for easier use:
+
+```{r subsetting dataset, show.fig='hide'}
+virginicaPetalLength <- iris[iris$Species == 'virginica',]$Petal.Length
+versicolorPetalLength <- iris[iris$Species == 'versicolor',]$Petal.Length
+```
+
+```{r, echo=FALSE, fig.show='hide'}
+plot(virginicaPetalLength,versicolorPetalLength)
+```
+___Q4. Make a scatterplot of the virginica petal length against the versicolor petal length___
+
+We will skip explanation of how to manually calculate the p-value using the mean and standard deviation as this will be covered later on in the program, but instead show how to simply do it in R. One important thing to remember is that the assumption for the t-test (and many other statistical tests) that the length of the petals is approximatly normaly distributed for the population.
+
+```{r ttest}
+ttestResult <- t.test(virginicaPetalLength, versicolorPetalLength)
+print(ttestResult)
+```
+
+You can get just the pvalue:
+
+```{r ttest pvalue}
+ttestResult$p.value
+```
+
+___Q5. What is our null hypothesis, and given our t-test result can we support or reject it?___
+
+<!--
+The assumption is that both groups are sampled from normal distributions with the same variance. 
+The null hypothesis is that the two means are equal. Because p-value < 0.05 we reject the null hypothesis.
+-->
+
+___Q6. Answer the same question for virginica Sepal length and Virginica Petal length___
+
+
+
+# Wilcoxon
+ 
+We have seen how to perform a t-test to compare if the mean of two groups is the same. However, we assumed that our data was normally distributed. Large outliers can heavily influence the sample mean and standard deviation, which would influence the t-test result. But what if during recording of the petal lengths the wrong values had been added? We change three values to simulate such outliers:
+
+```{r ttest with outliers}
+versicolorPetalLength[1] <- 15
+versicolorPetalLength[2] <- 17
+versicolorPetalLength[3] <- 14
+t.test(virginicaPetalLength,versicolorPetalLength)
+```
+
+The t-test is no longer significant.
+
+___Q7. Use the wilcoxon test, is the p-value lower or higher? (type ?wilcox.test for examples how to use it)___
+
+The Wilcoxon test merges the data together, ranks each point from lowest to highest values, separates the ranks back to the two groups, and using the sum or average rank calculates the test-statistics. First, look at the dotplot of the normal values:
+
+```{r plotitng ttest values, fig.show='hide'}
+stripchart(list(virginicaPetalLength, versicolorPetalLength),
+           vertical=TRUE,
+           ylab="Observations",
+           pch=21,
+           bg=1)
+abline(h=0)
+```
+
+___Q8. Read the stripchart help page, when would you typically use a stripchart?___
+
+There is a very big difference between the outlier and the normal points. Instead, below we ranked the values and plot the ranks in the right plot
+
+```{r plotting ranks, echo=F}
+# par() is a *function* that allows multiple plots to be combined in one figure
+# 1 = the number of rows, 2 = the number of columns
+par(mfrow=c(1,2))
+
+xrank <- rank(c(virginicaPetalLength,versicolorPetalLength))[seq(along=virginicaPetalLength)]
+yrank <- rank(c(virginicaPetalLength,versicolorPetalLength))[-seq(along=versicolorPetalLength)]
+# plot the previous plot for comparison
+stripchart(list(virginicaPetalLength, versicolorPetalLength),
+           vertical=TRUE,
+           ylab="Observations",
+           pch=21,
+           bg=1)
+abline(h=0)
+stripchart(list(xrank,yrank),
+           vertical=TRUE,
+           ylab="Ranks",
+           pch=21,bg=1,
+           cex=1.25)
+
+```
+
+___Q9. Why is the wilcoxon test better for data with outliers? ___ 
+
+
+
+# Correlation
+
+We hyopthesize that the wider a plants petals are, the longer they get, and would like to test this. Often plotting the two variables is already enough to see if they correlate. 
+
+___Q10. Make a scatterplot between Sepal length and Sepal width___
+
+```{r scatterplot sepal length and width, echo=FALSE, fig.show='hide'}
+plot(iris$Sepal.Length, iris$Sepal.Width)
+```
+There is a slight correlation between the Sepal length and Sepal width, and can find the correlation coefficient with
+
+```{r correlate sepal length and width}
+cor(iris$Sepal.Length, iris$Sepal.Width)
+```
+
+and indeed there is some correlation. However, The correlation is probably a lot stronger when we limit it do one species.
+
+___Q11. What correlation coefficient do you get if you correlate Sepal length of _versicolor_ with the Petal length of _versicolor_? Also make a scatterplot.___
+
+```{r correlate and plot petal length and width, echo=FALSE, fig.show='hide', eval=F}
+cor(iris$Petal.Length, iris$Petal.Width)
+plot(iris$Petal.Length,iris$Petal.Width)
+```
+
+___Q12. What correlation coefficient do you get if you correlate Petal width of _versicolor_ with the Petal length of versicolor?___
+
+```{r correlate and plot petal length and width versicolor, echo=FALSE, results='hide'}
+cor(iris[iris$Species=='versicolor',]$Petal.Length, iris[iris$Species=='versicolor',]$Petal.Width)
+```
+
+Instead of doing it two columns at a time, it is also possible to give a whole ```dataframe``` input for the correlation function. 
+
+___Q13. Get the correlation coefficient for all the columns by using cor() on the iris dataframe (don't forget to only select the columns with numeric values).___ 
+
+
+```{r correlate full iris data,echo=F, results='hide'}
+cor(iris[1:4])
+```
+
+___Q14. In the same way, plot the scatterplot for the 4 characteristics (see below for how the result should look)___. 
+
+___Q15. Add colour with___ ```col=iris$Species```
+
+```{r plot full iris data,echo=F}
+plot(iris[1:4], col=iris$Species)
+```
+
+# Dplyr
+You now know the correlation between the 4 measured variables. However, we don't know if there are difference in correlation between the species. We will try to correlate all of them at the same time. For this we can use a very useful package, [Dplyr](http://dplyr.tidyverse.org/). You can install packages like this:
+
+```{r, eval=F}
+install.packages('dplyr')
+```
+
+
+
+Packages are code written by other people that you can use. You first have to load it with 
+
+```{r}
+library(dplyr)
+```
+
+We can use this package for easy data frame manipulation, for example easily selecting all the values from one species:
+
+```{r dplyr select example,results="hide",message=FALSE}
+iris %>% 
+  filter(Species == "versicolor")
+```
+This is the same as doing
+```{r, eval=F}
+iris[iris$Species=="versicolor",]
+```
+
+
+It is also possible to group rows together by a column value:
+
+```{r dplyr group_by example,results="hide"}
+iris %>% 
+  group_by(Species)
+```
+and we can compute operations tha return more than one number back using ```do()```, and is made for using with dplyr ```group_by()``` to do computations within groups. See the difference between using and not using group_by:
+```{r dplyr do example,results="hide"}
+iris %>% 
+    do(head(.))
+
+iris %>% 
+  group_by(Species) %>% 
+    do(head(.))
+```
+The ___.___ in ```do()``` is the placeholder for the data that is sent using ```%>%```. So ```iris %>% do(head(.))``` sends the dataframe ```iris``` to the function ```do()```, which uses the function ```head()```.
+
+Instead of ```head()``` you can use any other function. We want to get a table of correlations for each of the attributes per Species.
+
+___Q16. In the below code, change ???? to the correct function to calculate the correlations___
+```{r, eval=F}
+cormat_result <- iris %>% 
+  group_by(Species) %>%  
+    do(cormat = ????(.[1:4]))
+```
+
+You can select the species and correlation matrices with
+
+```{r, results='hide', eval=F}
+cormat_result[[1]]
+cormat_result[[2]]
+```
+
+This should give this result:
+
+```{r dplyr table correlation, echo=FALSE}
+cormat_result <- iris %>% group_by(Species) %>%  do(cormat = cor(.[1:4]))
+cormat_result[[1]]
+cormat_result[[2]]
+```
+
+___Q17. Compare cor(iris[1:4]) with these correlations___
+
+
+# Linear regregession
+Now that we have seen that the petal width a petal length is strongly correlated we can use regression analysis to predict values that we have no measured. Regression finds a relationship between the predictor variable (measured in experiments) and response variable (derived from predictor variable). If there is a linear relationship between these two variables they can be represented by a line. The regression formula is
+
+```y = ax + b```
+
+where y is the response variable, x is the predictor variable, and a and b are the coefficients. We want to predict petal length using the petal width. 
+
+You can simply do a linerar regression with
+
+```{r linear model,results="hide"}
+lm(Petal.Length ~ Petal.Width, data=iris)
+```
+
+___Q18. Using the results from ```lm```, write down the mathematical equation to calculate petal length given the petal width.___
+
+<!-- 
+Petal Length = 2.230 * Petal Width + 1.084
+-->
+Now you can predict the petal length using the petal width using ```predict.lm()```. 
+
+___Q19. What petal length would a plant with petal width of 4 have?___ Hint: You have to give a measured value in a dataframe with the same column name as in the linear model, so use ```measured <- data.frame(Petal.Width=4)``` as your measured value.
+
+```{r predict value, hidden=TRUE, results='hide'}
+relation <- lm(Petal.Length ~ Petal.Width, data=iris)
+measured <- data.frame(Petal.Width=4)
+predict_value <- predict.lm(relation,measured)
+print(predict_value)
+```
+Finally, we plot the regression line
+
+```{r regression plot}
+# Plot the chart.
+relation <- lm(Petal.Length ~ Petal.Width, data=iris)
+plot(iris$Petal.Width,iris$Petal.Length,
+  abline(relation))
+```
+
+___Q20. Add in the point that you predicted with petal width of 4___ Hint: You can add extra points by using ```points()```. 
+
+```{r, fig.show='hide'}
+# Plot the chart. xlim(c(0,4)) limits the x-axis from value 0 to value 4
+# and ylim(0,11) limits the y-axis from 0 to 11. This is because the point
+# falls outside of the normal range of the plot.
+plot(iris$Petal.Width,iris$Petal.Length,
+  abline(relation), 
+  xlim=c(0,4), 
+  ylim=c(0,11))
+# Add the point using points() after the plot()
+```
+
+
+```{r, echo=F, eval=F}
+points(4,predict_value, col="red")
+```
+
+Try the same thing but without ```xlim``` and ```ylim``` in the plot function, what happens?
+
+# Chi-square test
+The chi-square test is used to find if two nominal or ordinal (both categorical) variables are independent. For example to test if people who don't smoke exercise more you can use the chi-square test. R has a built-in dataset where students smoking and exercise habits have been recorded. Load in the dataset:
+
+```{r load smoking dataset, message=FALSE}
+library(MASS) 
+head(survey)
+```
+
+The chi-square test is done on [contingency tables](https://en.wikipedia.org/wiki/Contingency_table#Example). 
+You can construct a contingency table with:
+
+```{r contigency table}
+tblSmoke = table(survey$Smoke, survey$Exer) 
+```
+
+After making the contingency table simply do
+
+```{r chisquare, results='hide', warning= FALSE}
+chisq.test(tblSmoke)
+```
+
+___Q21. What is the null hypothesis and do you reject it (at .05 significance level)?___
+<!--
+As the p-value 0.4828 is greater than the .05 significance level, we do not reject the null hypothesis that the smoking habit is independent of the exercise level of the students. 
+-->
+
+Use ```?survey``` to see the description of the columns. 
+
+___Q22. Use the chi-square test to test if which hand is on top after clapping and exercise levels are independent. What is the null hypothesis and do you reject it (at .05 significance level)? Do you think this is correct?___
+
+```{r chisquare fold, results='hide', echo=FALSE, warning= FALSE}
+tblClap <- table(survey$Clap, survey$Exer)
+chisq.test(tblClap)
+```
+<!--
+As the p-value 0.009816 is lower than the .05 significance level, we reject the null hypothesis that which hand is on top after clapping is independent of the exercise level of the students. 
+-->
+
+# Fisher's exact test
+In pathway analysis (which you will on one of your next days), the Fisher Exact test is often used. Similarily to the chi-square test it is used for testing independence of categorical variables. It is often used when the cell sizes are small. 
+
+___Redo the chi-square exercises but instead use the Fisher Exact test, and note the differences___ See ```?fisher.test```
+
+```{r fisher, echo=FALSE, results='hide'}
+fisher.test(tblSmoke)
+fisher.test(tblClap)
+```
