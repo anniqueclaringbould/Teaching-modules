@@ -1,1 +1,1 @@
-# teaching_modules
+# Teaching modules
