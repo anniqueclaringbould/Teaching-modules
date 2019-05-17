@@ -1,1 +1,13 @@
 # Teaching modules
+
+#Overview of all modules
+
+* R course - day 1
+* R course - day 2
+* R course - day 3
+* eQTL mapping
+* Co-expression analysis
+* Microbiome
+* Pathway analysis
+* GWAS
+* Differential expression
