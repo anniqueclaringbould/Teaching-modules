@@ -1,6 +1,6 @@
-# Teaching modules
+# Overview of all teaching modules
 
-#Overview of all modules
+Teaching modules given by the UMCG department of Genetics
 
 * R course - day 1
 * R course - day 2
