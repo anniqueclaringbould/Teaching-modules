@@ -1,0 +1,496 @@
+---
+title: "Pathway analysis"
+date: "8/15/2017"
+output: 
+  html_document:
+    toc: true # table of content true
+    toc_float: true
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+bibliography: Citations.ris
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+In this part of the course we will look into basic steps of the pathway enrichment analysis. There are many different methods, implementations and tools for performing this.
+
+Some up-to-date web-based enrichment tools are, for example:
+
+  - ToppGene (https://toppgene.cchmc.org/enrichment.jsp)
+  - Enrichr (http://amp.pharm.mssm.edu/Enrichr/)
+  - G:profiler (http://biit.cs.ut.ee/gprofiler/)
+  - DAVID (http://david.ncifcrf.gov)
+
+Here we will focus on ORA (overrepresentation analysis) and GSEA (Gene Set Enrichment Analysis), as implemented in ClusterProfiler R package [@Yu2012].
+
+# Preparation
+## Install necessary packages
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# These packages are from CRAN
+install.packages('data.table')  # Fast data reader
+install.packages('ggplot2')     # Plotting framework
+install.packages('dplyr')       # Powerful package for data management
+
+# These packages are from Bioconductor
+source("https://bioconductor.org/biocLite.R")     # Indicate the package repository
+biocLite("clusterProfiler")                       # Package for enrichment tests
+biocLite("org.Hs.eg.db")                          # Human gene annotation package
+biocLite("pathview")                              # For visualization of enriched KEGG pathways
+biocLite("topGO")                                 # Package for GO enrichment analysis
+biocLite("DOSE")                                  # Package for disease enrichment analysis
+```
+
+## Load necessary packages
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+library(data.table)
+library(clusterProfiler)
+library(pathview)
+library(ggplot2)
+```
+
+## Make working directory for this practical
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# Create the new directory 
+dir.create("~/PathwayAnalysisPracticalSession")
+
+# Change the working directoy 
+setwd("~/PathwayAnalysisPracticalSession")
+
+```
+
+## Set seed for the R session
+
+Some of the commands we use in this practical use random processes, such as random permutations for GSEA, FDR calculations and rendering of the network graphs. This means that each time the script is ran, the outcome may differ very slightly, just by chance. To make your code reproducible it is good idea to define the number "seed" in the beginning of the script. This way the script gives exactly the same output every time it is ran.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+set.seed(123)
+```
+
+# Prepare the data
+## Read in the data from RNA-seq differential analysis
+
+We will read in the results of differential expression analysis from previous practical. We will concentrate on **anti-CD3-stimulated** dataset in this practical.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# Read in CD3 dataset.
+cd3 <- fread('[path_to_the_diff_exp_folder]/[cd3_diff_exp_table]')
+
+```
+
+## Prepare data for ORA and GSEA
+
+Next we will do some data cleaning and convert gene IDs into usable format.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# Explore the data
+summary(cd3)
+
+# There are some log2FCs, lfcSE marked as "NAs". What is the reason?
+head(cd3[is.na(cd3$log2FoldChange), ])
+
+# How many such genes?
+table(cd3[is.na(cd3$log2FoldChange), ]$baseMean == 0)
+```
+
+We will remove the genes with mean base expression level 0, as those were not expressed in our data.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# Data cleaning, remove unexpressed genes (baseMean = 0)
+cd3 <- cd3[!cd3$baseMean == 0, ]
+
+# convert HGNC gene symbols to more stable ENTREZ IDs
+entrez <- bitr(cd3$V1, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = "org.Hs.eg.db")
+
+# Convert ENTREZ to text, so that R would process it correctly
+entrez$ENTREZID <- as.character(entrez$ENTREZID)
+```
+
+As you may see from the R message, ~10% of HGNC symbols were not connected with any ENTREZ ID. This is due to the unstable nature of HGNC annotation. In real-life science project you should opt for more stable annotation scheme (e.g. use one ENSEMBL/UCSC annotation database version throughout project).
+
+For the sake of brevity and simplicity, in this practical we remove unlinked gene IDs from following steps and proceed with remaining 90% of genes.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# Add column with ENTREZ IDs to the table, remove rows where ENTREZ was missing
+cd3 <- merge(cd3, entrez, by.x = 'V1', by.y = 'SYMBOL')
+```
+
+We will prepare the data for ORA. In ORA we will use genes which are significantly differentically expressed (FDR<0.05, absolute fold-change>2). Fold change is often used as additional filter for identifying most relevant genes for interpretation.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+# Prepare the data for overrepresentation tests
+# Filter in significant (adjusted P<0.05) results
+# Filter in only genes with larger than than 2-fold expression change 
+cd3_sig <- cd3[cd3$padj < 0.05 & abs(cd3$log2FoldChange) > 1, ]
+```
+
+Next we will prepare data for GSEA analysis. For that we need to order all genes based on their correlation strenght with the phenotype or effect size. In our case we will order those based on $log_2(FC)$. We will also extract the vector of all tested genes which can be used as "gene universe".
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# Order gene table by effect size (log2 fold-change), from largest to smallest
+cd3 <- cd3[order(cd3$log2FoldChange, decreasing = T), ]
+
+# Look at the range of fold changes
+plot(cd3$log2FoldChange, xlab = 'Gene', ylab = 'log2(FC)')
+
+
+# Prepare data for GSEA (vector of log2(FC)'s, named by ENTREZ IDs)
+cd3_gsea <- cd3$log2FoldChange
+names(cd3_gsea) <- cd3$ENTREZID
+# This vector of gene names corresponds to all genes we tested in the analysis and will be used later as "gene universe"
+
+```
+
+# Over-representation analyses (ORA)
+
+## Run KEGG over-representation analysis
+
+In this part we run enrichment test (hypergeometric test) for all differentially expressed genes (FDR<0.05, FC>2).
+
+  - We use all genes tested in the RNA-profiling study as a background set or "gene universe". This list was already constructed in the previous step.
+   
+  - We will query for all enrichment results and write out 25 most differentially expressed, not accounting the significance.
+   
+  - The default multiple testing is done by Benjamini-Hochberg method, flag `pvalueCutoff` can be used for filtering only significant results (<0.05). Additionally, `qvalueCutoff` flag is used to filter results based on another popular method of FDR estimation (Storey q-value).
+   
+  - The **defaults** of the command also apply restrictions on the sizes of gene sets tested in the analysis, those can be seen with command `?enrichKEGG`.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+KEGG_all <- enrichKEGG(gene = cd3_sig$ENTREZID,
+                 organism = 'hsa',
+                 universe = cd3$ENTREZID,
+                 pvalueCutoff = 1, 
+                 qvalueCutoff = 1)
+
+# this command converts ENTREZ IDs back to HGNC symbols to ease interpretation
+KEGG_all <- setReadable(KEGG_all, OrgDb = 'org.Hs.eg.db', keytype="ENTREZID")
+```
+
+We will accustom ourselves with the data structure of the analysis output.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# show the data structure
+head(str(KEGG_all), 25)
+```
+
+The resulting object is more complex R S4 data structure which consists separate "containers" for different results, analysis settings, etc. You can access to those containers by using **\@**.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# look at some slots
+head(KEGG_all@result, 5)  # result table
+KEGG_all@ontology         # what ontology was tested
+KEGG_all@pvalueCutoff     # what P-value cutoff was used
+
+```
+
+Now we look at the results by printing out 25 first rows of the result table. `View` function in RStudio makes it very comfortable.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
+# remove 8. row which is long and uninformative
+View(head(KEGG_all@result[, -8], 25))
+
+```
+
+
+**Q1:** How many KEGG pathways are significant if we consider Benjamini-Hochberg P<0.05?
+
+**Q2:** How many KEGG pathways are significant if we consider Storey Q<0.05?
+
+**Q3:** Authors of the original paper [@Quinn2015, [link](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140049)] have already applied the KEGG overrepresentation test to the same data. Find the results from the publication and compare to your results- are those similar? If not exactly, speculate, what could be the reason(s) of observed differences?
+
+**Q4:** Use Fisher's exact test to test the <span style="color:red">**over-representation**</span> of the <u>**fifth most significant**</u> gene set enrichment result.
+
+   - Google "Fisher's Exact test R"
+   
+   - Construct the contigency table- you can use this code snippet to replace "NAs" with the correct numbers from the output table:
+    
+```R
+GeneMatrixFisher <-
+       matrix(c(NA, NA, NA, NA),
+       nrow = 2,
+       dimnames = list(c("Diff_expressed", "Not_diff_expressed"),
+       c("Part_of_pathway", "Not_part_of_pathway")))
+```
+
+  - Tip: you can use command `addmargins` on your `GeneMatrixFisher` to see if your contigency table adds up.
+    
+  - Use the `GeneMatrixFisher` to run Fisher's Exact Test.
+
+**Q4.1:** Report the used command, Fisher's exact test P-value and odds ratio.
+
+**Q4.2:** Does Fisher's exact test give similar/same result as ClusterProfiler?
+
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=F, eval=F}
+# Fisher's Exact Test:
+
+GeneMatrixFisher <-
+       matrix(c(32, (2050 - 32), (45-32), (6194 - 2050 - 13)),
+       nrow = 2,
+       dimnames = list(c("Part_of_pathway", "Not_part_of_pathway"), 
+                       c("Diff_exp", "Not_diff_exp")))
+
+
+fisher.test(GeneMatrixFisher, alternative = 'greater')
+```
+
+### Visualize the overall KEGG enrichment analysis results
+
+We can visualize our results on a barplot. Length of the bar shows significance ($-log_{10}(P)$) and the color shows number of genes overlapping with gene set. From now on, we will save the plots as separate files in the work directory, that enables us to do closer inspection.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+input_barplot <- KEGG_all@result[, -8]
+input_barplot$Description <- factor(input_barplot$Description, levels = rev(as.character(input_barplot$Description)))
+# here we apply the default significance thresholds (Benjamini-Hochberg P<0.05 and Storey Q-value<0.2)
+input_barplot <- input_barplot[input_barplot$p.adjust < 0.05 & input_barplot$qvalue < 0.2, ]
+
+ggplot(input_barplot, aes(x = Description, y = -log10(pvalue), fill = Count)) + geom_bar(stat = 'identity') + 
+  theme_classic() + 
+  coord_flip() + scale_fill_continuous(low = 'lightblue', high = 'salmon')
+
+# Adjust the size of the plots, if necessary
+ggsave('~/PathwayAnalysisPracticalSession/KEGG_barplot.png', units = 'in', height = 6, width = 6, dpi = 400)
+
+```
+
+Next we visualize five most enriched pathways on the network graph. Size of the pathway node shows statistical significance and links indicate gene membership in the pathway. This gives the static graph as a output. If it is necessary to investigate further, you can use flag `fixed = FALSE` to see interactive version.
+
+```{r, fig.height=25, fig.width=25, message=FALSE, warning=FALSE, eval=F}
+
+png('~/PathwayAnalysisPracticalSession/KEGG_cnetplot.png', width = 20, height = 20, res = 400, units = 'in')
+cnetplot(KEGG_all, categorySize = "pvalue", showCategory = 5, foldChange = cd3_gsea, cex = 0.1)
+dev.off()
+
+# Interactive version
+cnetplot(KEGG_all, categorySize = "pvalue", showCategory = 5, foldChange = cd3_gsea, cex = 0.1, fixed = F)
+
+```
+
+**Q5:** What are the most up- and down-regulated genes from 5 most enriched pathways, based on visual inspection?
+
+**Q6:** Is there any of top pathways which shows coordinated up- or down-regulation for the majority (or all) of its members?
+
+### Visualize the most significantly enriched KEGG pathway
+
+For KEGG pathways it is possible to visualize the location of differentially expressed genes on the pathway, as well as their magnitude of differential expression. This kind of visualization might help to identify most relevant genes for given condition and generate new research hypotheses.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+# Following command saves the corresponding KEGG graph to your work directory
+pathview(gene.data = cd3_gsea,
+         pathway.id = KEGG_all@result[1, ]$ID,
+         species = "hsa",
+         limit = list(gene = max(abs(cd3_gsea)), cpd = 1), 
+         out.suffix = "most_sig_pathway")
+```
+
+
+**Q7:** Same figure is also reported in the original publication [@Quinn2015, [link](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140049)]. Does it look similar or do you see any difference? Speculate, where can it come from?
+
+## Run Gene Ontology over-representation analysis
+
+Next we run the overrepresentation test for Gene Ontologies.
+
+  - For the sake of brevity, we test only the ontologies from Biological Process category. By setting the `ont` flag, is also possible to test Molecular Function (MF), Cellular Component (CC) or all three categories combined (ALL).
+   
+  - For visualization purposes we apply this time significance thresholds (Benjamini-Hochberg FDR<0.05 and Storey FDR<0.05).
+   
+  - We specify that we test the enrichment for the gene sets with sizes between 10-10000 genes (flags `minGSSize` and `maxGSSize`)
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+
+GO_all <- enrichGO(gene = cd3_sig$ENTREZID,
+                   universe = cd3$ENTREZID,
+                   OrgDb = 'org.Hs.eg.db',
+                   ont = 'BP',
+                   pvalueCutoff = 0.05, 
+                   qvalueCutoff = 0.05,
+                   minGSSize = 10, 
+                   maxGSSize = 10000)
+
+# remove 8. column which is long and uninformative and display 25 most significant rows.
+View(head(GO_all@result[, -8], 25))
+
+```
+
+### Visualize the GO enrichment analysis results
+
+To ease the interpretation and see the hierarchical relationships between most enriched GO terms, we visualize those on graph structure. Square boxes are significantly enriched terms and color depicts the significance (P-value). We will visualize 15 most significant terms.
+
+```{r, message=FALSE, warning=FALSE, dpi=500, eval=F}
+
+png('~/PathwayAnalysisPracticalSession/GO_plot.png', height = 10, width = 10, units = 'in', res = 400)
+plotGOgraph(GO_all, firstSigNodes = 15)
+dev.off()
+
+```
+
+**Q8:** What is the most significant GO term?
+
+**Q9:** What are the main general themes coming out of the analysis?
+
+## Run Disease Ontology over-representation analysis
+
+Clusterprofiler allows to do also ORA for human diseases, making use of several databases of curated gene-disease relationships. As our trait of interest is Coeliac disease, it would be interesting to see differentially expressed genes also show enrichment of some human diseases and whether those are could be related with Coeliac disease or any other autoimmune disease.
+
+**Q10:** If you see that the genes differentially expressed in your disease-of-interest (in our case, Coeliac disease) are enriched by genes known to be associated with some other disease (e.g. inflammatory bowel disease, another autoimmune disease), what is the biological conclusion you make? Could this observation be useful for the search of the treatment and how would you proceed with that?
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+DO_all <- enrichDO(gene = cd3_sig$ENTREZID,
+                   universe = cd3$ENTREZID,
+                   pvalueCutoff = 1, 
+                   qvalueCutoff = 1)
+
+# remove 8. column which is long and uninformative
+View(head(DO_all@result[, -8], 25))
+
+```
+
+**Q11:** Does resulting significant disease list make sense in relation to Coeliac disease? Are there any diseases which could show similar expression profile as Coeliac disease? If not, speculate, what could be the reason of ambigous results?
+
+# Gene set enrichment analysis (GSEA)
+
+Next we will use GSEA [@Subramanian2005] on the diffrential analysis results. Unlike ORA, GSEA uses all the results from differential expression analysis, not only significant ones.
+
+## Run GSEA (Gene Set Enrichment Analysis) for KEGG pathways
+
+For the sake of speed and brevity, we use recommended minimal number of 1000 permutations for this analysis (to get more stable and precise results, your could increase the number of permutations to e.g. 10000 in real scientific work). Also, we test only KEGG pathways which have more than 50 known gene members.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+
+KEGG_GSEA <- gseKEGG(geneList = cd3_gsea,
+                         organism = 'hsa',
+                         nPerm = 1000,
+                         minGSSize = 50,
+                         pvalueCutoff = 1,
+                         verbose = FALSE)
+View(head(KEGG_GSEA@result[, -c(10:12)], 25))
+
+```
+
+**Q10:** How many pathways are significant if we consider Benjamini-Hochberg FDR?
+
+**Q11:** Are the results in line with ORA results?
+
+
+### Visualize GSEA plot for most significant KEGG pathway
+
+We will investigate the GSEA plot for most significant result.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+png('~/PathwayAnalysisPracticalSession/GSEA_plot.png', height = 6, width = 9, units = 'in', res = 400)
+
+# Here the geneSetID we specify the first (most significant) GSEA result to visualize:
+gseaplot(KEGG_GSEA, geneSetID = head(KEGG_GSEA@result, 1)$ID)
+dev.off()
+```
+
+# Compare the biological themes of different stimulations
+
+It is possible to easily compare the results several ORA analyses, using the functionality from compareCluster results. Next we read in and preprocess differentially expressed genes from all three conditions (**UN**-CeD vs control, unstimulated; **CD3**-CeD vs control, anti-CD3 stimulation; **PMA**-CeD vs control, PMA stimulation). We will run the KEGG ORA, using default settings and all genes tested in the study as an background.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+
+# Read in and preprocess all different conditions:
+
+# Unstimulated
+unstim <- fread('[path_to_the_diff_exp_folder]/diffExpGenes_unstim_all.csv')
+
+unstim <- unstim[!unstim$baseMean == 0, ]
+
+entrez <- bitr(unstim$V1, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = "org.Hs.eg.db")
+unstim <- merge(unstim, entrez, by.x = 'V1', by.y = 'SYMBOL')
+unstim_overrep <- unstim[unstim$padj < 0.05 & abs(unstim$log2FoldChange) > 1, ]
+
+# CD3
+cd3 <- fread('[path_to_the_diff_exp_folder]/diffExpGenes_cd3_all.csv')
+
+cd3 <- cd3[!cd3$baseMean == 0, ]
+
+entrez <- bitr(cd3$V1, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = "org.Hs.eg.db")
+cd3 <- merge(cd3, entrez, by.x = 'V1', by.y = 'SYMBOL')
+cd3_overrep <- cd3[cd3$padj < 0.05 & abs(cd3$log2FoldChange) > 1, ]
+
+# PMA
+pma <- fread('[path_to_the_diff_exp_folder]/diffExpGenes_pma_all.csv')
+
+pma <- pma[!pma$baseMean == 0, ]
+
+entrez <- bitr(pma$V1, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = "org.Hs.eg.db")
+pma <- merge(pma, entrez, by.x = 'V1', by.y = 'SYMBOL')
+pma_overrep <- pma[pma$padj < 0.05 & abs(pma$log2FoldChange) > 1, ]
+
+input_comparison <- list(UNST = unstim_overrep$ENTREZID,
+                         CD3 = cd3_overrep$ENTREZID,
+                         PMA = pma_overrep$ENTREZID)
+
+ck <- compareCluster(geneCluster = input_comparison, fun = "enrichKEGG",
+                     universe = unstim$ENTREZID, 
+                     pvalueCutoff = 1,
+                     qvalueCutoff = 1)
+```
+
+
+We use dplyr and ggplot2 functionality to compare the 20 most significant pathways for each group. Here, the size of the dot indicates significance ($-log_{10}(P)$) and red dots indicate pathways withstanding multiple testing correction.
+
+```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=8, eval=F}
+
+library(dplyr) #  we load this package only now because of apparent conflict with "pathview" package
+
+compare_input <- ck@compareClusterResult
+
+# Next command does the following:
+  # groups data based on stimulation (Cluster)
+  # from each stimulation takes out 20 genes with smallest P-values
+  # arranges all genes by P-value for visualization
+  # reorders factor levels of "Description", so that ggplot2 could use the correct order
+  # constructs variable "significance" to outline sets which are Benjamini-Hochberg FDR<0.05
+  # uses ggplot to visualize the plot
+
+compare_input %>% 
+  group_by(Cluster) %>%
+  top_n(20, desc(pvalue)) %>%
+  arrange(pvalue) %>%
+  ungroup() %>%
+  mutate(Description = factor(Description, levels = rev(unique(as.character(Description))))) %>%
+  mutate(significance = case_when(p.adjust < 0.05 ~ 'sig.',
+                                  p.adjust >= 0.05 ~ 'not sig.')) %>%
+  ggplot(aes(y = Description, x = Cluster, colour = significance, size = -log10(pvalue))) + 
+  geom_point(stat = 'identity') + 
+  theme_bw() + 
+  scale_colour_manual(values = c('black', 'red'))
+
+ggsave('compare_cluster.png', height = 9, width = 6, units = 'in', dpi = 400)
+
+```
+
+**Q12:** Are there any KEGG pathways overlapping between any of the conditions?
+
+**Q13:** What condition has the largest number of significantly enriched pathways?
+
+**Q14:** Are the per-cohort results in line with the ORA results reported in the paper?
+
+# Report the session information
+
+Finally, when wrapping up your analysis, it is always a good idea to save the settings you have used. This involves software versions and the date of the analysis, making it possible to replicate or debug the results by different person.
+
+Command `sink` is useful for saving any output from the screen into file.
+
+Investigate the resulting file and note what information is saved.
+
+```{r, message=FALSE, warning=FALSE, eval=F}
+sink("AnalysisInfo.txt")  # Open the connection to file.
+sessionInfo()             # Prints information about R session.
+Sys.time()                # Prints the information about analysis time stamp.
+sink()                    # Close the connection to file.
+```
+
+***
+
+# References

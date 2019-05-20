@@ -1,0 +1,57 @@
+---
+title: "Bonus excercises for pathway analysis"
+date: "8/15/2017"
+output: 
+  html_document:
+    toc: false # table of content true
+    toc_float: true
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+bibliography: Citations.ris
+---
+# Bonus Exercise
+
+Next advanced tasks are meant to quickest students who have already finalized the previous analyses.
+
+ClusterProfiler has a very useful functionality to allow performing ORA and GSEA for *any* gene set database. This means that you can define the gene set yourself or use some custom gene set database which is not explicitly implemented to ClusterProfiler.
+
+We will try to use this functionality on anti-CD3 treated Coeliac disease differential expression results.
+
+**Task 1** Investigate ClusterProfiler manual [here](https://bioconductor.org/packages/release/bioc/vignettes/clusterProfiler/inst/doc/clusterProfiler.html) to identify which commands allow you to perform universal ORA and GSEA. Note what extra file(s) are needed to do so.
+
+**Task 2** There are numerous gene sets available and downloadable on the web tool enrichr website (http://amp.pharm.mssm.edu/Enrichr/). Locate the downloadable databases from the web site, investigate what kind of gene sets you can test and select one you would like to test in your data. Also, think what gene set dataset gives interesting information about differentially expressed genes in Coeliac disase. Download the desirable file.
+
+**NB!** Some of the data files might not work- then just make another choice for now. Also, some of the datasets include numerical values after each gene name- skip those for now.
+
+**Task 3** Unfortunately, the data files are not in the "R-friendly" format. The biggest challenge in this bonus task is to read the file in and convert it to the usable `data.frame`. It should finally look like that:
+
+|term|gene|
+|:-----|:-------|
+|term1|entrezID1|
+|term2|entrezID2|
+
+Note that column names should be "term" and "gene", and gene name should be ENTREZ ID.
+
+  - Google and investigate `read.table` documentation, how to read tables with variable numbers of elements in each row into R.
+  
+    + Hint!: arguments like `fill`, `na.strings`, `col.names` are needed. Also the usage of command `count.fields` is mandatory.
+  
+  - If you manage to read the table into R, apply `melt` command from `reshape2` package to convert data to long format, as have previously learned in the R part.
+  
+  - Remove unnecessary column(s) and rows where gene name is "NA". Make use of `!is.na()` for that.
+  
+  - Convert HGNC symbols to ENTREZ IDs, as we have done before. Do not forget to convert ENTREZ ID to character.
+  
+  - Merge the ENTREZ IDs to the intial table, manipulate the table to the format we need. Use the tricks you have learned today and on previous days for that.
+
+**Task 4** Run universal ORA, using differentially expressed genes from CD3 stimulation and your own gene set database. Put P-value and Q-value cutoffs to 1, to investigate top results even if none are significant.
+
+**Q:** Did you find any significant and/or interpretable results?
+
+**Task 5** Run universal GSEA, using all ranked genes from CD3 stimulation and your own gene set database. Put P-value cutoff to 1, to investigate top results even if none are significant.
+
+**Q:** Did you find any significant and/or interpretable results?
+
+**Task 6** Visualize your ORA and GSEA results using plots we have constructed today.
