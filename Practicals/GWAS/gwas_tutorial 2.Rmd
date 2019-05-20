@@ -1,0 +1,502 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+---
+title: "GWAS tutorial"
+author: "Adriaan van der Graaf"
+date: "September 20, 2018"
+output: html_document
+---
+
+
+## Introduction
+
+This is a tutorial of a genome-wide association study (GWAS).
+
+In essence, a genome-wide association study is an examination of a genome-wide set of variants in different individuals to see if any variant is associated with a phenotype. 
+
+A GWAS can answer questions such as:
+ * Which genetic variants are associated to Human height?
+ * Are the genetics of the HLA region involved in celiac disease?
+ * How much genetic risk does an individual have for a disease? (not in this tutorial.)
+
+
+A GWAS study investigates a number of individuals with have the following information available:
+
+ * genotype information on a genome-wide scale
+ * phenotype information 
+ 
+Phenotype data is any data related to the individual: from questionnaires, to blood related data such as LDL cholesterol, but also includes if someone has a disease or not.
+By using this information, a GWAS compares the DNA of individuals having a certain phenotype. For instance, some individuals have a disease (cases) and similar individuals may not have the disease (controls).
+If one type of a genetic variant (one allele) is more frequent in cases, then the variant is identified as being associated with the disease. 
+The associated SNPs are then considered to mark a region of the human genome that may influence the risk of developing a disease.
+
+This tutorial provides a workflow of doing a GWAS on celiac disease. Identifying loci that are associated with increased risk to develop the disease. This information can be further used to investigate the molecular pathways that genes from the GWAS-identified loci are involved (a later tutorial). 
+
+Celiac disease is an autoimmune disorder that can occur in genetically predisposed individuals and it affects 1 in 100 individuals worldwide. It is known that gluten consumption leads to damage in the small intestine, resulting in poor absorbency of nutrients from the human body. 
+This leads to growth defects in young children, or a plethora of other symptoms in adults.
+
+This tutorial assumes you are familiar with R language, but it's not necessary:
+Answers are provided to everyone. 
+Furthermore, questions are provided to get familiar with every step of the GWAS workflow. 
+Remember that doing associations is the same as doing statistics so a relatively small knowledge of maths is required. 
+Please make an effort to understand the equations that are used here. 
+Additionally all of the math used here is encoded in the R code that is provided by the tutorial.
+
+Because of the sensitive nature of using individual's genetic data, *publicly* available genotypes and *simulated* phenotypes will be used in this tutorial. However, the workflow essentially remains the same if you use a data set that contains real phenotypes.
+
+The GWAS data that will be generated for *Celiac disease* can be used for follow-up analysis in the next tutorials.
+
+## Data used in this tutorial.
+
+The data in use is in the binary *plink* format.
+
+BED file
+The bed files are encoded in a binary format.It is a primary representation of genotype calla at bi-allelic variants. Must be accompanied by BIM  and FAM files.
+
+BIM files
+The fields in a BIM file are:
+Chromosome
+SNP marker ID
+Genetic distance
+Physical position
+Allele 1
+Allele 2
+
+FAM files
+The fields in a FAM file are:
+Family ID
+Individual ID
+Paternal ID
+Maternal ID
+Sex (1 = male; 2 = female; other = unknown)
+Phenotype (1 = control; 2 = case; 0 = unknown)
+
+Plink is a command-line program that allows a user to perform an integrated GWAS, but is not very transparent in its methods.For more information on plink, please, use the link: https://www.cog-genomics.org/plink2. Therefore, in this tutorial, we are doing a very similar analysis using R language. 
+
+We will load the plink genotype and phenotype matrix using the R package `BEDMatrix`. The rest of the analysis will be done using *vanilla* R. Some commands that are provided will be complicated (such as is the nature of R in some cases), but the comments in the code explain the steps that are taken.
+
+Our  data consists of $512$ individuals, and $131,118$ *bi-allelic* genetic variants.
+We use bi-allelic variants, because they are easy to analyze. 
+
+##Downloading the data
+
+You can download a zip file from [here](http://molgenis.org/downloads/gwas_tutorial_AvdG_2017/celiac_gwas.zip)
+
+Make sure this zip file is unpacked in a unique folder. in our case this is the folder `genotypes`
+
+Then point the r working directory to this folder using `setwd`.
+
+### Data conventions
+If we want to do statistics on genotype data, these data are needed to be numerically encoded. In this tutorial, we choose to explain the *additive* effect of a certain allele.
+For instance, take a hypothetical SNP `rs12` which has two alleles (remember the bi-allelic variants): `A' and `C'. The amount of individuals that have a each  genotype of `rs12' are shown in the table below.
+```{r}
+a <- data.frame(genotype=c("AA","AC", "CC"), count=c(497,12,3))
+a
+```
+The `A` allele is more prevalent so we call this as the major allele, and the `C` allele is then the minor allele. We then encode the genotypes `AA`, `AC` and `CC` for each individual as $0, 1, 2$ respectively. This is the same as counting the number of `C` alleles in an individual.
+
+Coding alleles numerically allows an investigator to do regression on the additive relationship of an allele and a phenotype.
+Dominant, recessive or epistatic effects are also present in biology, but we do not consider them in this tutorial.
+
+## GWAS steps
+
+The following steps are taken to perform a GWAS: 
+
+ 1. Import the data in R and explore them
+ 
+ 2. Quality control per SNP
+      i) Remove SNPs with minor allele frequency (MAF) < 0.01
+      i) Remove SNPs that deviate from Hardy Weinberg equilibrium (HWE) using a P threshold < 1e-6
+      i) Remove SNPs with missing genotype rate < 0.99
+ 
+ 3. Quality control per individual
+     i) Identify and remove related individuals
+     i) Perform principal component analysis (PCA)and plot the first two components to identify and remove population outliers
+ 
+ 4. Perform genome-wide association testing
+     i) do initial association analysis, linear
+     i) do association analysis, logistic (Bonus)
+     i) prepare a Manhattan plot
+ 
+ Before we start, make sure you install the `BEDMatrix` package:
+ 
+```
+install.packages("BEDMatrix")
+```
+*IMPORTANT!*
+Make sure your working directory is the same as where the data is, using `setwd()`
+
+ 
+## Step 1. Import the data in R and explore them
+ 
+### Download and have a look at the data
+First, download the data and set the R working directory to this directory as well (use `setwd`).
+ 
+When the data is downloaded, let's have a look at it. 
+Find the data in the folder 'genotypes'.
+
+```{r, message=FALSE, warning=FALSE, eval=T}
+
+require(BEDMatrix)
+setwd("genotypes/")
+#Import the data in R
+genotype_matrix <- BEDMatrix("celiac_gwas.bed") #my data is stored in a directory called 'genotypes'
+phenotypes <- read.table("celiac_gwas.fam", header=FALSE)[,6] #the sixth column of the fam file contains the phenotype matrix.
+```
+
+*Make sure this works, otherwise R is not in the working directory as where the data is stored.*
+
+First, have a look at the phenotypes, plot a histogram of them (use the `hist()` function). They should be normalized beforehand if they do not look normalized.
+A phenotype is normal, if it looks like a classic bell curve.
+
+Now if we look at the `genotype_matrix` object, we will see that it is a big matrix: each row represents one individual and each column a SNP.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+dim(genotype_matrix) # how many variants and how many individuals are present
+
+genotype_matrix[1:100,1] #shows 100 individual genotypes for the first SNP
+
+colnames(genotype_matrix)[1:10] # shows the first 10 names of all SNPs
+rownames(genotype_matrix)[1:10] # shows the first 10 names of all individuals in the dataset
+
+genotype_matrix[1:3, 1:5] # shows the first three individuals and first five SNPs
+#Note that SNP genotypes are encoded as 0 (AA), 1 (AB or BA) and 2 (BB)
+```
+
+Q1: How many SNPs and individuals are present in our data set before quality control?
+(hint:use in R, 'dim(genotype_matrix)')
+
+Q2: Please plot the data of the 42nd SNP with the phenotype (`plot(genotype_matrix[,320] ,phenotypes)`). Would you say this SNP is associated with the phenotype?
+
+## Step 2: Quality control per SNP
+
+The genotype data we have here here is still fairly noisy. We will take three steps to ensure our genotypes are cleaned: 
+
+1. Remove SNPs with low minor allele frequency (MAF < 0.01)
+2. Remove SNPs that deviate from HWE using a P threshold < 1e-6
+3  Remove SNPs with high missing genotype rate (missingness)
+
+### Step 2.1: Remove SNPs with low minor allele frequency (MAF < 0.01)
+
+Low minor allele frequency alleles can lead to false positive results in a GWAS. If the minor allele frequency is not determined properly, there is a chance that this leads to over fitting of association in individuals with extreme phenotypes and alleles that are not present in the rest of the population.
+Because our data consists of 512 individuals, we choose a minor allele frequency threshold of 1 percent, which means that we expect to see the allele in $0.01 * 512 * 2 = 10$ chromosomes. The multiplication by 2 is because every individual has 2 alleles.
+
+The function for identifying the minor allele frequency per SNP is as follows:
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+#This merely  counts the number of minor alleles over all individuals and then divides it by 2* the number of individuals.
+minor_allele_frequency <- function(row){
+	a1_count = 2* sum(row == 2) + sum(row ==1)
+	return(a1_count / (2*length(row)))
+}
+
+#Identify the allele frequency of the first SNP
+minor_allele_frequency(genotype_matrix[,1])
+```
+Q3: What is the MAF of the first SNP?
+
+
+Now using the following apply() function, we are able to get a vector of SNPs with minor allele frequencies < 0.01, which we will  filter out as follows: 
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+
+#Now, do it for all the snps
+minor_allele_frequency_per_snp <- apply(genotype_matrix, 2, minor_allele_frequency)
+
+
+#Identify SNPs that have a MAF lower than 0.01. These SNPs will be removed in the next steps
+maf_filter <- minor_allele_frequency_per_snp < 0.01 # logical vector
+
+#Check how many SNPs show a MAF < 0.01 that will be removed
+sum(maf_filter, na.rm=T) #4098 SNPs
+```
+Q4: How many SNPs show a MAF < 0.01?
+
+#Now, we can remove the SNPs showing a MAF < 0.01 
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+genotype_matrix_maf_filtered <- genotype_matrix[,!maf_filter]
+```
+
+ For simplicities sake, we will just continue with the 
+ unfiltered genotype matrix, and we only filter variants out
+ when we known the total number of SNPs that should be removed in all the quality control steps.
+ Make sure you make an histogram of the minor allele frequencies, to see if everything is correct before and after filtering. Use the `hist()' function.
+
+### Step 2.2: Remove SNPs that deviate from HWE using a P threshold < 1e-6
+The Hardy Weinberg equilibrium (HWE) is a principle stating that the genetic variation in a population will remain constant from one generation to the next in  the absence of disturbing factors. Departure from this equilibrium can be an indicator of potential genotyping errors, population stratification or even actual association with the phenotype under study. In other words, the HWE states that the observed counts per genotype should match the following expectation, if there is random segregation of alleles: 
+$$
+Exp(AA) = (1-p)^2n\\
+Exp(AB) = 2 p (1-p)n\\
+Exp(BB) = p^2n
+$$
+
+We identify the expected counts as follows:
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+#Check the number of individuals and SNPs before quality control
+num_individuals <- nrow(genotype_matrix)
+num_variants <- ncol(genotype_matrix)
+
+#Find the expected genotype counts per SNP
+#Make a matrix per column with the number of expected homozygote (AA), hetererozygote (AB) and homozygote (BB) genotypes per SNP
+expected_genotype_count <- cbind( 
+	(1-minor_allele_frequency_per_snp)^2 * num_individuals,
+	2*(1-minor_allele_frequency_per_snp) * minor_allele_frequency_per_snp * num_individuals,
+	minor_allele_frequency_per_snp^2 * num_individuals
+	)
+
+#Have a look at the first 10 SNPs
+expected_genotype_count[1:10,]
+```
+
+If we  compare the expected with the observed values, we can then use the Pearson chi squared test to test for alleles that are not in hardy Weinberg equilibrium (HWE).
+The Pearson $\chi^2$ test is the following:
+$$
+\chi^2 = \frac{(Obs(AA) - Exp(AA))^2}{Exp(AA)} + \frac{(Obs(AB) - Exp(AB))^2}{Exp(AB)} +   \frac{(Obs(BB) - Exp(BB))^2}{Exp(BB)}
+$$
+
+$ A represents the major allele and B represents the minor allele. Obs(AA) then represents the observed number of homozygotes for the major allele.
+  
+Now, lets have a look at the observed counts of genotypes:
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+
+find_observed_count <- function(row){
+	counts <- c(
+			sum(row == 0, na.rm=T), #number of individuals with genotype AA
+			sum(row == 1, na.rm=T), #number of individuals with genotype AB
+			sum(row == 2, na.rm=T)  #number of individuals with genotype BB
+		)
+	return(counts)
+}
+
+#Try this function for SNP 42
+find_observed_count(genotype_matrix[,42])
+```
+Q5: How many homozygote (AA), heterozygote (AB) and homozygote (BB) genotypes for SNP 42 can you observe?
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+#Calculate observed genotype counts for all SNPs
+observed_genotype_count <- t(matrix(apply(genotype_matrix, 2, find_observed_count), nrow=3))
+
+```
+
+Now, compare the observed with expected genotype counts and calculate the chi sq statistics
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+#now compare observed with expected, and get the chi sq statistic.
+chi_sq_statistics <- apply((observed_genotype_count - expected_genotype_count)^2 / expected_genotype_count, 1, function(x) sum(x, na.rm=T))
+chi_sq_statistics[1]
+```
+
+Plot an histogram of chi sq statistics
+`hist(chi_sq_statistics)`
+
+These values are chi squared distributed with one degree of freedom, so we can then identify the P value
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+hardy_weinberg_p_values <- 1 - pchisq(chi_sq_statistics,1)
+```
+
+Now we can make a logical vector in the same way that we did for the minor allele frequency filter. This vector contains P values that deviate from HWE (P < 1e-6), which we can use to filter out the SNPs at a later step.
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+hwe_p_val_filter <- hardy_weinberg_p_values < 1e-6
+
+
+# Check how many SNPs deviate from HWE and should be removed later
+genotype_matrix_hwe_filtered <- genotype_matrix[,!hwe_p_val_filter]
+dim(genotype_matrix_hwe_filtered)
+```
+Q6: How many SNPs deviate from HWE?
+
+
+# Step 2.3: Remove SNPs with high missing genotype rate (missingness)
+This step is relatively simple, but it is required for most analyses. 
+To make sure that there are no SNPs that are missing due to technical biases, we remove all the SNPs that have at least one value missing. Missing values are encoded as `NA` in the genotype_matrix. We can identify a missing value by using the `is.na()` function in R
+
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+#missing snps are encoded as NA in our data.  so we count them and divide over the number of individuals.
+missingness <- apply(genotype_matrix, 2, function(x) sum(is.na(x))) / num_individuals
+```
+Plot the distribution of missingness.
+Based on these results, genotyping seems to be done well, now filter for missingness 
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+missingness_filter <- missingness != 0
+```
+Check how many SNPs show high missingness and should be removed later
+
+``` {r, message=FALSE, warning=FALSE, eval=FALSE }
+genotype_matrix_missingness_filtered <- genotype_matrix[,!missingness_filter]
+dim(genotype_matrix_missingness_filtered)
+```
+Q7: How many SNPs show high genotype rate missingness?
+
+### Step 2.4: Filter out all SNPs that follow the below criteria:
+
+MAF < 0.01
+HWE P < 1e-6
+high missingness (encoded as NA)	
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+# We can now filter out all snps, and save the filtered matrix
+genotype_matrix_geno_qc <- genotype_matrix[,!missingness_filter & !hwe_p_val_filter & !maf_filter]
+minor_allele_frequency_geno_qc <- minor_allele_frequency_per_snp[!missingness_filter & !hwe_p_val_filter & !maf_filter]
+
+
+#Check how many SNPs and individuals remain after quality control
+dim(genotype_matrix_geno_qc)
+
+```
+Q8: After quality control per SNP, how many SNPs have been filtered out?
+ 
+ 
+## Step 3: Quality control per individual 
+We have filtered the SNPs genotypes and we can now proceed with filtering out individuals. This analysis excludes individuals based on two criteria: relatedness and population outliers. A relatedness check can potentially help identify duplicated and/or contaminated samples. To remove population outliers is critical in genetic studies as population stratification is a main resource of confounding that can lead to spurious associations. Due to population stratification, genotypic differences between cases and controls are generated because of different population origins rather than any effect of disease risk. Therefore, for our analysis, we will remove population outliers.
+
+### Step 3.1: To identify related individuals
+To identify related individuals, we make a genetic relationship matrix. This matrix identifies how much related the individuals are by comparing all genotypes of the individuals. The more similar are two individuals on the DNA level, the more likely they are to be related.
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+
+#Make a genetic relatedness matrix (complicated in the math)
+
+maf_normalizer <- sqrt(2*(1-minor_allele_frequency_geno_qc)*minor_allele_frequency_geno_qc)
+
+#Following Yang et al 2010:
+# grm = W %*% W / N
+# where w_{ij} = (x_{ij} - 2*p) / sqrt(2*p*(1-p))
+# p is the allele frequency.
+
+w_mat <- t(apply(genotype_matrix_geno_qc, 
+				1,
+			 	function(x) as.vector((x - 2*(minor_allele_frequency_geno_qc)) / maf_normalizer)
+			 	)
+			)
+
+# Takes about a minute but 2 GB of memory
+grm <- (w_mat %*% t(w_mat)) / num_variants
+
+```
+
+Now, we have the grm and we can create a heat map to check the relatedness of all individuals (extra exercise).
+
+We set a cutoff of 0.1 for relatedness, which roughly means that we exclude individuals that are more related to each other than you would be related to a great great grandparent.
+Plot a histogram
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+hist(grm[lower.tri(grm)])
+```
+
+Remove the individuals that are more than 0.1 related to each other.
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE }
+
+# Remove individuals that show a relatedness value more than 0.1 
+relatedness_indice <- which(grm > 0.1, arr.ind=TRUE) #find the indices in the matrix.
+
+relatednes_individuals <- unique(relatedness_indice[relatedness_indice[,1] != relatedness_indice[,2],][,1]) #make sure not to remove individuals which are compared as the same.
+
+# For simplicity's sake, we remove all related individuals.
+# and apply the relatedness filter.
+relatedness_filter <- rep(FALSE, num_individuals)
+relatedness_filter[relatednes_individuals] <- TRUE
+
+#Check the number of related individuals
+genotype_matrix_relatedness_filtered <- genotype_matrix_geno_qc[!relatedness_filter,]
+dim(genotype_matrix_relatedness_filtered)
+```
+Q9: How many individuals should be excluded due to relatedness?
+
+
+## Step 3.2: Perform PCA on the individuals and identify population outliers
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+principal_components <- prcomp(grm) # relatively easy in R.
+```
+Now, we can plot the first two principal components.
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+plot(principal_components$x[,1], principal_components$x[,2]) # plot the first two principal components
+```
+
+Using some arbitrary threshold, we can now filter the full matrix
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+#We decide on a threhold for the principal components to filter on
+
+pca_filter <- principal_components$x[,2] < -0.25
+
+#Identify the individuals that show PCAs < -0.25
+rownames(genotype_matrix_geno_qc)[pca_filter]
+
+#Check how many individuals are identified as population outliers
+genotype_matrix_pcas_filtered <- genotype_matrix_geno_qc[!pca_filter,]
+dim(genotype_matrix_pcas_filtered)
+```
+Q10: How many individuals are identified as population outliers from PCA analysis?
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+#Remove individuals from the genotype matrix based on relatedness and PCA, and we have concluded our QC steps
+genotype_matrix_post_qc <- genotype_matrix_geno_qc[!pca_filter & !relatedness_filter,]
+
+#Also, remove these individuals from the phenotypes.
+phenotypes_post_qc <- phenotypes[!pca_filter & !relatedness_filter]
+
+dim(genotype_matrix_post_qc) # leaves 500 individuals! 114404 variants!
+
+```
+Q11: How many individuals remain after quality control per individual?
+
+## Step 4: Testing for genetic associations
+
+Now we can test whether our genetic variants are associated with celiac disease.
+Using a linear model, we can associate all the genotypes to the disease.
+Let's examine if the third SNP is associated with celiac disease.
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+summary(lm(genotype_matrix_post_qc[,1]~phenotypes_post_qc))
+```
+
+Next, we create the association table using an R function, which outputs the slope. Then, we can associate the disease phenotype to any genotype:
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+
+do_quantative_association <- function(genotypes, phenotypes){
+
+	sumdat <- summary(lm(genotypes~phenotypes))
+	return(as.vector(sumdat$coefficients[2,])) #second row is the column.
+}
+
+# It takes a while (about 2 minutes)
+associations <- t(matrix(apply(genotype_matrix_post_qc, 2, do_quantative_association, phenotypes=phenotypes_post_qc), nrow=4))
+
+```
+
+We have calculated the associations and we would like to plot the significance level over the chromosomal positions.
+SNP names are in the format <chr>:<position>_<effect_allele>. Therefore, we split this format and turn it into a dataframe.
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+
+
+positions_of_snps <- do.call(rbind,strsplit(colnames(genotype_matrix_post_qc), ":|_"))
+
+associations_with_position <- cbind(positions_of_snps, associations)
+
+#Make a dataframe for plotting with ffplot
+associations_with_position_df <- data.frame(chr = as.numeric(associations_with_position[,1]), 
+                                 position = as.numeric(associations_with_position[,2]),allele = associations_with_position[,3],
+                                 beta = as.numeric(associations_with_position[,4]),se = as.numeric(associations_with_position[,5]),
+                                 t_stat = as.numeric(associations_with_position[,6]),p_val = as.numeric(associations_with_position[,7]))
+```
+
+
+Finally, we plot the Manhattan plot using ggplot2
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+require(ggplot2)
+ggplot(associations_with_position_df, aes(x=position, y=-log10(p_val), col=as.factor(chr))) + 
+  facet_grid(.~chr, scales="free_x") + 
+  geom_point()
+ 
+
+
+#Save the plot in png format
+
+ggplot(associations_with_position_df, aes(x=position, y=-log10(p_val), col=as.factor(chr))) + 
+  facet_grid(.~chr, scales="free_x") + 
+  geom_point()
+
+ggsave("assocplot.png", width=8, height=4.5, dpi=300)
+```

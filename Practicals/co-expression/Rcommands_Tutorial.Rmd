@@ -1,0 +1,556 @@
+---
+title: "WGCNA_TutorialWorkshop"
+author: "Sipko"
+date: "August 21, 2017"
+
+output:
+ html_document:
+   toc: true # table of content true
+   toc_float: true
+   depth: 3  # upto three depths of headings (specified by #, ## and ###)
+   number_sections: true  ## if you want number sections at each table header
+   theme: united  # many options for theme, this one is my favorite.
+   highlight: tango  # specifies the syntax highlighting style
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = 'E:/Groningen/ConferencesAndLectures/CourseMaterials09-2017/CeliacData/')
+library("WGCNA");
+library("DESeq2")
+library("biomaRt")
+```
+#Preparation
+##Loading R packages
+After starting an R session, we load the required packages and the data, after appropriately setting the working directory (you must select the directory where you previously stored the "countTable.csv" (should be in your "./Data/" folder) or redownload it from [countTable.csv](https://molgenis26.target.rug.nl/downloads/rIntroduction/countTable.csv)):
+
+
+```{r loadLibaries, eval=FALSE, warning=F}
+# If necessary, change the path below to the directory where the data files are stored. 
+# On Windows use a forward slash / instead of the usual \.
+workingDir = "E:/Groningen/ConferencesAndLectures/CourseMaterials09-2017/CeliacData/";
+setwd(workingDir); 
+# Display the current working directory
+getwd();
+
+install.packages("matrixStats")
+install.packages("Hmisc")
+install.packages("splines")
+install.packages("foreach")
+install.packages("doParallel")
+install.packages("fastcluster")
+install.packages("dynamicTreeCut")
+install.packages("survival")
+
+source("http://bioconductor.org/biocLite.R") 
+
+#have to type an "a" for all
+biocLite("AnnotationDbi")
+biocLite("impute")
+biocLite("GO.db")
+biocLite("preprocessCore")
+
+if(require("WGCNA"))
+  install.packages("WGCNA")
+if(require("DESeq2"))
+  biocLite("DESeq2")
+if(require("biomaRt"))
+  biocLite("biomaRt")
+
+library("matrixStats")
+library("Hmisc")
+library("splines")
+library("foreach")
+library("doParallel")
+library("fastcluster")
+library("dynamicTreeCut")
+library("survival")
+
+library("preprocessCore")
+library("AnnotationDbi")
+library("impute")
+library("GO.db")
+
+library("WGCNA");
+library("DESeq2");
+library("biomaRt")
+```
+
+## Loading data
+Next we load the count tables into R. These contain the expression of each gene determined by RNA-seq. The numbers int the data table indicate the measured number of reads for each gene, representing the activity of those genes in each sample.
+
+```{r loadData, results="hide", warning=FALSE}
+# The following setting is important, do not omit.
+options(stringsAsFactors = FALSE);
+#Read in the celiac data set
+data = read.csv("countTable.csv");
+# Take a quick look at what is in the data set:
+dim(data);
+names(data);
+
+countTable = as.data.frame(data[,-c(1)]);
+rownames(countTable) = data$X;
+
+# Use the information in the column names to generate a data.frame comprising the sample information.
+colData <- data.frame(row.names = colnames(countTable), 
+                      type= unlist(lapply(colnames(countTable), 
+                      function(x){unlist(strsplit(x, split = "_"))[1]})), 
+                      sample= unlist(lapply(colnames(countTable), 
+                      function(x){unlist(strsplit(x, split = "_"))[2]})), 
+                      stimulation= unlist(lapply(colnames(countTable), 
+                      function(x){unlist(strsplit(x, split = "_"))[3]}))
+)
+
+# Add library size, which is the total amount of gene reads per sample
+colData$libSize <- colSums(countTable)
+
+#First 10 rowns of the colData object
+head(colData)
+ 
+cd3_sampleNames <- rownames(colData)[which(colData$stimulation == "CD3")] 
+cd3_countTable <- countTable[,cd3_sampleNames]
+cd3_colData <- colData[cd3_sampleNames,] #colData has sample names by row
+```
+
+
+##Normalization
+As you previously did in the differential expressiona analysis, also in this analysis you normalize the data before you start your co-expression analysis. This time we use the rlog normalization to be sure we do the exact same thing they did in the paper.
+
+```{r normalization, warning=FALSE}
+# Load packages
+library(DESeq2)
+
+dds_cd3 <- DESeqDataSetFromMatrix(countData = cd3_countTable,
+                              colData = cd3_colData,
+                              design = ~ type+sample)
+
+
+#vst_cd3 <- assay(vst(dds_cd3, blind=FALSE))
+rlog_vst_cd3=assay(rlog(dds_cd3))
+```
+
+##Removing genes with less than 10 reads in any sample to reduce noise
+According to the paper 10,787 genes should remain. How many do we actually see remain? Is this work thus reproducable?
+
+```{r, results='hide'}
+maxPerRow=apply(rlog_vst_cd3,1,max)
+includeIndexes=maxPerRow>9
+length(which(includeIndexes))
+rlog_vst_cd3_Min10=rlog_vst_cd3[includeIndexes,]
+```
+
+
+Since WGCNA expects the samples to be on the rows and the genes on the columns, we transpose the data.
+
+```{r WGCNA}
+#transpose data and create a dataframe
+datExpr0 = t(rlog_vst_cd3_Min10);
+```
+
+##  Checking data for excessive missing values and identification of outlier samples
+Next, we check if all samples pass quality control. This is necessary because in some cases a mistake has occured and a sample with nonsense values is created as a result (and we want to remove those). 
+
+Also, we check if all genes pass QC. This is necessary because some genes are not expressed in the tissue of interest and the method we are going to use requires there to be some deviation in the expression of each gene. In this step we remove all genes that do not pass QC (genes that have no expression in any sample).
+
+```{r qcMissingValues, results='hide', warning=F}
+
+gsg = goodSamplesGenes(datExpr0, verbose = 3);
+gsg$allOK
+
+if (!gsg$allOK)
+{
+  # Optionally, print the gene and sample names that were removed:
+  if (sum(!gsg$goodGenes)>0) 
+     printFlush(paste("Removing genes:", paste(names(datExpr0)[!gsg$goodGenes], collapse = ", ")));
+  if (sum(!gsg$goodSamples)>0) 
+     printFlush(paste("Removing samples:", paste(rownames(datExpr0)[!gsg$goodSamples], collapse = ", ")));
+  # Remove the offending genes and samples from the data:
+  datExpr0 = datExpr0[gsg$goodSamples, gsg$goodGenes]
+}
+
+```
+#Sample clustering/analysis
+Next, we cluster the samples (in contrast to clustering genes which will come later), to see if there are any obvious outliers.
+
+```{r qcOutliers, warning=F}
+
+sampleTree = hclust(dist(datExpr0), method = "average");
+
+# Plot the sample tree: Open a graphic output window of size 12 by 9 inches
+# The user should change the dimensions if the window is too large or too small.
+sizeGrWindow(12,9)
+#pdf(file = "Plots/sampleClustering.pdf", width = 12, height = 9);
+par(cex = 0.6);
+par(mar = c(0,4,2,0))
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+cex.axis = 1.5, cex.main = 2)
+
+
+```
+
+The height on the y-axis indicates how different the samples are from eachother. The point at which the line is split is what determines how similar to samples are. I.E. Coeliac_14_CD3 is much more different from Control_1_CD3 than e.g. Control_B_CD3 and Control_H_CD3 which are the two samples that are most similar to eachother based on the metrix used to constuct this dendogram. Can you determine which is the sample that least resembles any of the other samples?
+
+Now we are going to determine which samples are outliers. We do this by calculating the average distance the samples have to eachother. We also calculate the standard deviation and then define "outlier samples" as those that are further away than the average distance between samples+5 standard deviations:
+
+```{r, warning=F}
+
+#calculate the average distance the samples have to eachother
+distanceMean=mean(sampleTree$height)
+#calculate the standard deviation of the distance the samples have to eachoter
+distanceStandardDeviation=sd(sampleTree$height)
+#at what height is a sample at least 5 standard deviations more away from another sample
+largeDistance=distanceMean+distanceStandardDeviation*5
+largeDistance
+```
+##Outlier Sample detection
+Next we check which samples are have a distance larger than "largeDistance"
+```{r, warning=F, results='hide'}
+which(sampleTree$height>largeDistance)
+```
+
+How many samples are outlier samples according to this method? Indeed, none.
+
+To show how a sample can be removed, we still show how you could remove the furthers outlier sample (this might be necessary in your future excersize). One can remove it by hand, or use an automatic approach.
+Choose a height cut that will remove the offending sample, say 70 (the red line in the plot), and use a branch cut at that height.
+
+```{r removeOutliers, results='hide', warning=F}
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+cex.axis = 1.5, cex.main = 2)
+# Plot a line to show the cut
+abline(h = 80, col = "red");
+# Determine cluster under the line
+clust = cutreeStatic(sampleTree, cutHeight = 70, minSize = 10)
+table(clust)
+# clust 1 contains the samples we want to keep.
+keepSamples = (clust==1)
+datExpr = datExpr0[keepSamples, ]
+nGenes = ncol(datExpr)
+#check if we indeed removed a sample
+nrow(datExpr0)
+nSamples = nrow(datExpr)
+nSamples
+
+#since we want to keep working with all samples we go back to the orginial matrix
+datExpr = datExpr0
+```
+
+##Loading clinical trait data
+We now read in the trait data and match the samples for which they were measured to the expression samples. If you do not already have the "colData.csv" file you can download it: [colData.csv](https://molgenis26.target.rug.nl/downloads/rIntroduction/colData.csv). 
+
+```{r loadingTraitData, results='hide', warning=F}
+traitData = read.csv("colData.csv");
+dim(traitData)
+names(traitData)
+
+# Form a data frame analogous to expression data that will hold the clinical traits.
+samples = rownames(datExpr);
+traitRows = match(samples, traitData[,1]);
+datTraits = traitData[traitRows,c(-1)];
+rownames(datTraits) = traitData[traitRows, 1];
+```
+
+We now have the expression data in the variable datExpr, and the corresponding clinical traits in the variable datTraits. Before we continue with network construction and module detection, we visualize how the clinical traits (celiac of non-celiac) relate to the sample dendrogram.
+
+```{r recluster, results='hide', warning=F}
+# Re-cluster samples
+sampleTree2 = hclust(dist(datExpr), method = "average")
+# Convert traits to a color representation: red means coeliac, green means control;
+traitColors = datTraits$type;
+traitColors[traitColors=="Coeliac"]="red"
+traitColors[traitColors=="Control"]="green"
+# Plot the sample dendrogram and the colors underneath.
+plotDendroAndColors(sampleTree2, traitColors,
+groupLabels = names(datTraits),
+main = "Sample dendrogram and trait heatmap")
+#note my R Studio version does not always bring the graphs to the front, so you may have to move this venster a bit to see the graph.
+
+```
+The colors in the bottom (red/green) indicate to which group the samples belong. We observe that there is a group of celia samples that cluster together (control group = green, coeliac = red), but some of the celiac samples appear to group with the control samples. Is this something you would expect? Can you think of 1 or multiple possible explanations why some coeliac samples cluster together with the controls?
+
+The last step is to save the relevant expression and trait data
+
+```{r saveData}
+save(datExpr, datTraits, file = "step2Input.RData")
+```
+
+#Gene clustering
+##Automatic network construction and module detection
+###Choosing the soft-thresholding power: analysis of network topology
+Constructing a weighted gene network entails the choice of the soft thresholding power β to which co-expression similarity is raised to calculate adjacency [1]. The authors of [1] have proposed to choose the soft thresholding power based on the criterion of approximate scale-free topology. We refer the reader to that work for more details; here we illustrate the use of the function pickSoftThreshold that performs the analysis of network topology and aids the user in choosing a proper soft-thresholding power. The user chooses a set of candidate powers (the function provides suitable default values), and the function returns a set of network indices that should be inspected, for example as follows:
+
+```{r networkConstruction, results='hide', warning=FALSE}
+# Choose a set of soft-thresholding powers
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+# Call the network topology analysis function
+sft = pickSoftThreshold(datExpr, powerVector = powers, verbose = 5, networkType="signed")
+# Plot the results:
+sizeGrWindow(9, 5)
+par(mfrow = c(1,2));
+cex1 = 0.9;
+# Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,cex=cex1,col="red");
+# this line corresponds to using an R^2 cut-off of h
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], sft$fitIndices[,5],
+xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+main = paste("Mean connectivity"))
+text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
+```
+
+The left panel shows the scale-free fit index (y-axis) as a function of the soft-thresholding power (x-axis). The right panel displays the mean connectivity (degree, y-axis) as a function of the soft-thresholding power (x-axis)
+
+The threshold one should pick is the point at which the line in the first figure no longer increases or is not increasing much anymore (getting close to the asymptote).
+A soft treshold (power) of 20 is selected in the paper.
+
+##One-step network construction and module detection
+Constructing the gene network and identifying modules is now a simple function call the function below. Note that "power=20" is the power that we determined in the previous step.
+```{r oneStepNetworkConstruction, results='hide', warning=F}
+net = blockwiseModules(datExpr, corType="bicor", power = 20,
+TOMType = "signed", minModuleSize = 30,
+reassignThreshold = 0, mergeCutHeight = 0.25,
+numericLabels = TRUE, pamRespectsDendro = FALSE,
+saveTOMs = TRUE,
+saveTOMFileBase = "DataTOM",
+verbose = 3)
+```
+
+We now return to the network analysis. To see how many modules were identified and what the module sizes are:
+```{r colors, results='hide'}
+table(net$colors)
+```
+The label 0 is reserved for genes outside of all modules. Which is the largest module? How many modules do we found and how many where found in the paper? (http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140049)
+
+
+The hierarchical clustering dendrogram (tree) used for the module identification is returned in net$dendrograms[[1:2]]; #$, used in the next steps.
+The dendrogram can be displayed together with the color assignment using the following code:
+
+```{r hirarchicalClustering, warning=F}
+# open a graphics window
+sizeGrWindow(12, 9)
+# Convert labels to colors for plotting
+mergedColors = labels2colors(net$colors)
+# Plot the dendrogram and the module colors underneath
+
+sizeGrWindow(6,6)
+# Use the layout function for more involved screen sectioning
+layout(matrix(c(1:4), 2, 2), heights = c(0.8, 0.2), widths = c(1,1))
+#layout.show(4);
+nBlocks = length(net$dendrograms)
+# Plot the dendrogram and the module colors underneath for each block
+for (block in 1:nBlocks)
+{
+  plotDendroAndColors(net$dendrograms[[block]], mergedColors[net$blockGenes[[block]]],
+  "Module colors",
+  dendroLabels = FALSE, hang = 0.03,
+  addGuide = TRUE, guideHang = 0.05)
+}
+
+
+```
+The grey colour indicates the genes have not been assigned to any modules. Why could this be?
+
+This dendrogram shows which genes behave most similar across all samples (in a similar manner as we showed that we can cluster samples we can also cluster genes). Instead of the colors at the bottom being assigned by the predefined control and Celiac groups we had before, the gene clusters are determined computationally. Do you notice anything peculiar in these results? Why could this be?
+
+Answer:
+https://support.bioconductor.org/p/61501/
+
+We can also investigate the correlation between modules to see which are most correlated and which are most different. If any modules are highly correlated it makes sense to merge them (in the current WGCNA version this is automatically done in the previous step).
+
+```{r, warning=F}
+#calculate module eigengenes
+MEList=moduleEigengenes(datExpr,net$colors)
+MEs=MEList$eigengenes
+MET=MEs
+plotEigengeneNetworks(MET,"",marDendro=c(0,4,1,2),marHeatmap = c(3,4,1,2),cex.lab=0.8,xLabelsAngle=90)
+```
+
+The figure above shows that some modules are more similar than others, but non have a dissimliarity (1-correlation) of less than 0.2 (or a correlation of more than 0.8), thus all modules are reasonably different and there is no need to merge them.
+
+
+```{r saveData2, warning=F}
+#//Genes with high module membership tend to be hub genes within that module
+moduleLabels = net$colors
+moduleColors = labels2colors(net$colors)
+MEs = net$MEs;
+geneTree = net$dendrograms[[1]];
+save(MEs, moduleLabels, moduleColors, geneTree,
+file = "data-02-networkConstruction-auto.RData")
+```
+
+#Relating modules to external clinical traits
+##Quantifying module-trait associations
+In this analysis we would like to identify modules that are significantly associated with the measured clinical traits.
+Since we already have a summary profile (eigengene) for each module, we simply correlate eigengenes with external traits and look for the most significant associations:
+
+```{r getModules, warning=F}
+
+# Define numbers of genes and samples
+nGenes = ncol(datExpr);
+nSamples = nrow(datExpr);
+# Recalculate MEs with color labels
+MEs0 = moduleEigengenes(datExpr, moduleColors)$eigengenes
+MEs = orderMEs(MEs0)
+coeliacIndexes=datTraits[,1]=="Coeliac"
+datTraits2=datTraits
+datTraits2[coeliacIndexes,1]=1
+datTraits2[!coeliacIndexes,1]=0
+#Technically we should be using the point biserial correlation because we are comparing a continuous variable to a binary variable.
+#However, since the point biserial correlation is just a particular case of the popular Peason's product-moment coefficient, you can use cor.test to approximate (more on that later) the correlation between a continuous X and a dichotomous Y. For example, given the following data:
+#https://stackoverflow.com/questions/35880910/point-biserial-and-p-value
+moduleTraitCor = cor(MEs, as.numeric(datTraits2[,1]), use = "p");
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples);
+```
+
+When you have a large number of modules and traits, a suitable graphical representation will help in reading the table. We color code each association by the correlation value:
+
+```{r visualizeModules, warning=F, results='hide'}
+sizeGrWindow(10,6)
+# Will display correlations and their p-values
+textMatrix = paste(signif(moduleTraitCor, 2), "\n(",
+signif(moduleTraitPvalue, 1), ")", sep = "");
+dim(textMatrix) = dim(moduleTraitCor)
+par(mar = c(6, 8.5, 3, 3));
+# Display the correlation values within a heatmap plot
+labeledHeatmap(Matrix = moduleTraitCor,
+xLabels = names(datTraits),
+yLabels = names(MEs),
+ySymbols = names(MEs),
+colorLabels = FALSE,
+colors = greenWhiteRed(50),
+textMatrix = textMatrix,
+setStdMargins = FALSE,
+cex.text = 0.5,
+zlim = c(-1,1),
+main = paste("Module-trait relationships"))
+
+#print the correlations
+sortedIndexes=sort(moduleTraitCor,decreasing=T, index.return=T)$ix
+cbind(moduleTraitCor[sortedIndexes,])
+
+```
+
+The analysis identifies the several significant module-trait associations. The numbers indicate the correlation between celiac disease and the activity of that module. The activity of certain modules is higher with in individuals with Celiac disease. Which are these modules? And which co-expression modules have a lower activity in Celiac individuals? What is the highest correlation detected according to this analysis. And what was found in the paper?
+
+##Gene relationship to trait and important modules: Gene Significance and Module Membership
+We quantify associations of individual genes with our trait of interest (celiac disease) by defining Gene Significance GS as (the absolute value of) the correlation between the gene and the trait. For each module, we also define a quantitative measure of module membership MM as the correlation of the module eigengene and the gene expression profile. This allows us to quantify the similarity of all genes on the array to every module. 
+
+```{r geneRelationship, warning=FALSE}
+# Define variable "affected" containing the affected column of datTrait
+affected = as.data.frame(datTraits2$type);
+names(affected) = "affected"
+# names (colors) of the modules
+modNames = substring(names(MEs), 3)
+MEsNumeric=apply(MEs,2, as.numeric)
+geneModuleMembership = as.data.frame(cor(datExpr, MEsNumeric, use = "p"));
+MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
+
+names(geneModuleMembership) = paste("MM", modNames, sep="");
+names(MMPvalue) = paste("p.MM", modNames, sep="");
+affected=apply(affected,2, as.numeric)
+geneTraitSignificance = as.data.frame(cor(datExpr, affected, use = "p"));
+GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
+names(geneTraitSignificance) = paste("GS.", names(affected), sep="");
+names(GSPvalue) = paste("p.GS.", names(affected), sep="");
+```
+
+##Intramodular analysis: identifying genes with high GS and MM
+Using the GS and MM measures, we can identify genes that have a high coeliac significance as well as high module membership in interesting modules. As an example, we look at the module that has the highest association with celiac disease. We plot a scatterplot of Gene Significance vs. Module Membership in the that module (You may need to check which color the module is in your case as the colors may have been selected at random.):
+
+```{r intramodularAnalysis, warning=FALSE}
+module = "turquoise"
+column = match(module, modNames);
+moduleGenes = moduleColors==module;
+sizeGrWindow(7, 7);
+par(mfrow = c(1,1));
+verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+abs(geneTraitSignificance[moduleGenes, 1]),
+xlab = paste("Module Membership in", module, "module"),
+ylab = "Gene significance for celiac patients",
+main = paste("Module membership vs. gene significance\n"),
+cex.main = 1.2, cex.lab = 1.2, cex.axis = 1.2, col = module)
+```
+GS and MM are highly correlated, illustrating that genes highly significantly associated with a trait are often also the most important (central) elements of modules associated with the trait. You are encouraged to try this code with other significance trait/module correlation (for example, the magenta, midnightblue, and red modules with celiac disease).
+
+
+##Summary output of network analysis results
+We have found modules with high association with our trait of interest, and have identified their central players by the Module Membership measure. We now merge this statistical information with gene annotation and write out a file that summarizes the most important results and can be inspected in standard spreadsheet software such as MS Excel or Open Office Calc. Our expression data are only annotated by probe ID names: the command
+```{r colnames, results='hide', warning=F}
+colnames(datExpr)
+```
+will return all probe IDs included in the analysis. Similarly,
+
+```{r colnames2, results='hide', warning=F}
+colnames(datExpr)[moduleColors=="purple"]
+```
+
+will return probe IDs belonging to the yellow module. To facilitate interpretation of the results, we use a probe annotation file provided by the manufacturer of the expression arrays to connect probe IDs to gene names and universally recognized identification numbers (Entrez codes).
+
+We now create a data frame holding the following information for all probes: gene symbol, module color, gene significance for celiac disease, and module membership and p-values in all modules. The modules will be ordered by their significance for celiac disease, with the most significant ones to the left.
+
+```{r summarizeResults, warning=F}
+# Create the starting data frame
+probes = colnames(datExpr)
+geneInfo0 = data.frame(substanceBXH = probes,
+moduleColor = moduleColors,
+geneTraitSignificance,
+GSPvalue)
+# Order modules by their significance for celiac disease
+modOrder = order(-abs(cor(MEs, affected, use = "p")));
+# Add module membership information in the chosen order
+for (mod in 1:ncol(geneModuleMembership))
+{
+oldNames = names(geneInfo0)
+geneInfo0 = data.frame(geneInfo0, geneModuleMembership[, modOrder[mod]],
+MMPvalue[, modOrder[mod]]);
+names(geneInfo0) = c(oldNames, paste("MM.", modNames[modOrder[mod]], sep=""),
+paste("p.MM.", modNames[modOrder[mod]], sep=""))
+}
+# Order the genes in the geneInfo variable first by module color, then by geneTraitSignificance
+#geneOrder = order(geneInfo0$moduleColor, -abs(as.numeric(as.character(geneInfo0$GS.affected))));
+#geneInfo = geneInfo0[geneOrder, ]
+
+geneInfo = geneInfo0
+
+```
+
+This data frame can be written into a text-format spreadsheet, for example by
+
+```{r writeCsv, warning=F}
+write.csv(geneInfo, file = "geneInfo.csv")
+View(geneInfo)
+```
+
+It is possible to open the file in excel, or inspect it directly within R using
+the command View(geneInfo). Also you can use the following command to copy genes to the clipboard:
+
+```{r}
+writeClipboard(colnames(datExpr)[moduleColors=="red"])
+```
+
+Which is the most interesting gene according to this analysis?
+  - Are negatively correlating genes also interesting?
+
+What follow up steps can you come up with? (hint: Remember the analyses you did during the other practicals this week)
+
+Is there anything peculiar you notice in the results?
+
+Are the results you obtain from this analysis very similar to those reported in the paper (http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140049)? They report IFNG and BACH2 as two important Celiac disease hub genes. do these genes have a high gene significance score?\s\s
+  - If they are very different, why can this be?
+  Can you find the exact methods they used to obtain their results?\s\s
+    - Are there any potential scientific issues you can immagine?
+
+In the analyses above we used a subset of the data to simplify the learning process. In the paper, however they also only used this subset of the data. Can you think of reasons why this could be (maybe try to do the same analysis with one of the other groups (or all groups simultaneously, as this is what WGCNA is actually intended for)?\s\s
+  - Can you think of any scientific issues that may arise from this?
+
+If you would like to learn more about WGCNA we refer to the paper below. In addition, additional tutiorials can be found on (most of this tutorial is based on sections 1, 2a and 3 of this tutorial):
+https://labs.genetics.ucla.edu/horvath/CoexpressionNetwork/Rpackages/WGCNA/Tutorials/
+
+There are also video tutorials that help you better understand each step of the WGCNA analysis e.g.:
+https://www.youtube.com/watch?v=4h0_izP6ab0
+
+#References
+B. Zhang and S. Horvath. A general framework for weighted gene co-expression network analysis. Statistical Applications in Genetics and Molecular Biology, 4(1):Article 17, 2005.
