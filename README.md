@@ -2,16 +2,19 @@
 
 Teaching modules given by the UMCG department of Genetics
 
+<!--
 ### Introduction to R
 * [R course - day 1]
 	* [Slides](R-course/day3Recap.pptx)
 * [R course - day 2](R-course/statistics.html)
 * [R course - day 3](R-course/plotting.html)
 	* [Answers](R-course/plottingAnswers.html)
-
+-->
 ### Practical workshops about specific topics
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
 	* [Genotype files](Practicals/GWAS/celiac_gwas)
+	
+<!--
 * [Differential expression](Practicals/differential-expression/rnaseq_practical1.html) !NB 2 versions
 * [Pathway analysis](Practicals/pathway-analysis/Pathway_analysis_students.html) !NB bonus exercise
 	* [Slides](Practicals/pathway-analysis/Pathway_analysis.pptx) 
@@ -26,3 +29,4 @@ Teaching modules given by the UMCG department of Genetics
 * [Single-cell]()
 * [Pharmacogenetics]()
 * [Variant classification]()
+-->
