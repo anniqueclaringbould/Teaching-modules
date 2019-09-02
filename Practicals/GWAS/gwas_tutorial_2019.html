@@ -171,8 +171,24 @@ $(document).ready(function () {
 <h2>Data used in this tutorial</h2>
 <p>The data in use is in the binary <em>plink</em> format, which consists of a BED, BIM and FAM file.</p>
 <p><strong>BED file</strong> The BED file contains the genotypes called at bi-allelic variants, encoded in a binary format. A BED file must be accompanied by BIM and FAM files.</p>
-<p><strong>BIM file</strong> The BIM file encodes information about each of the variable genotype locations, or SNPs. The fields in a BIM file are: * Chromosome * SNP marker ID * Genetic distance * Physical position * Allele 1 * Allele 2</p>
-<p><strong>FAM files</strong> The FAM file encodes information about each of the individuals that you are including in your analysis. The FAM file also includes the phenotype information. The fields in a FAM file are: * Family ID (this column is used if you have multiple individuals from the same family) * Individual ID * Paternal ID (this column is used to indicate the Individual ID of the father, if you have family data) * Maternal ID (this column is used to indicate the Individual ID of the mother, if you have family data) * Sex (1 = male; 2 = female; other = unknown) * Phenotype (1 = control; 2 = case; 0 = unknown)</p>
+<p><strong>BIM file</strong> The BIM file encodes information about each of the variable genotype locations, or SNPs. The fields in a BIM file are:</p>
+<ul>
+<li>Chromosome</li>
+<li>SNP marker ID</li>
+<li>Genetic distance</li>
+<li>Physical position</li>
+<li>Allele 1</li>
+<li>Allele 2</li>
+</ul>
+<p><strong>FAM files</strong> The FAM file encodes information about each of the individuals that you are including in your analysis. The FAM file also includes the phenotype information. The fields in a FAM file are:</p>
+<ul>
+<li>Family ID (this column is used if you have multiple individuals from the same family)</li>
+<li>Individual ID</li>
+<li>Paternal ID (this column is used to indicate the Individual ID of the father, if you have family data)</li>
+<li>Maternal ID (this column is used to indicate the Individual ID of the mother, if you have family data)</li>
+<li>Sex (1 = male; 2 = female; other = unknown)</li>
+<li>Phenotype (1 = control; 2 = case; 0 = unknown)</li>
+</ul>
 <p>Plink is a command-line program that allows a user to perform an integrated GWAS. It is a very fast and helpful program, but is not very transparent in its methods. For more information on plink, please use the link: <a href="https://www.cog-genomics.org/plink2" class="uri">https://www.cog-genomics.org/plink2</a>. In this tutorial, we are doing a very similar analysis using R language.</p>
 <p>We will load the plink genotype and phenotype matrix using the R package <code>BEDMatrix</code>. The rest of the analysis will be done using base R. Some commands that are provided will be complicated (such as is the nature of R in some cases), but the comments in the code explain the steps that are taken.</p>
 <p>Our data consists of 512 individuals, and 131,118 bi-allelic genetic variants. Bi-allelic variants are variants where we only observe two alleles in the human population. The majority of SNPs are bi-allelic, but there are sites where three or even all four alleles occur. We restrict our analysis to bi-allelic variants because they are easy to analyze.</p>
@@ -228,14 +244,14 @@ $(document).ready(function () {
 <p>Now, download the data and set the R working directory to this directory as well (use <code>setwd</code>).</p>
 <p>When the data is downloaded, let’s have a look at it. Find the data in the folder ‘genotypes’.</p>
 <pre class="r"><code>require(BEDMatrix)
-setwd(&quot;genotypes/&quot;)
+setwd(&quot;celiac_gwas/&quot;)
 #Import the data in R
 genotype_matrix &lt;- BEDMatrix(&quot;celiac_gwas.bed&quot;) #my data is stored in a directory called 'genotypes'
 phenotypes &lt;- read.table(&quot;celiac_gwas.fam&quot;, header=FALSE)[,6] #the sixth column of the fam file contains the phenotype matrix.</code></pre>
 <p><em>Make sure this works, otherwise R is not in the working directory as where the data is stored.</em></p>
 <p>First, have a look at the phenotypes, plot a histogram of them (use the <code>hist()</code> function). In a GWAS, ideally the phenotypes should look normally distributed (i.e. it looks like a classic bell curve). If the phenotype data is not normally distributed, it is important to normalize it before running the association analysis.</p>
 <p>Now if we look at the <code>genotype_matrix</code> object, we will see that it is a big matrix: each row represents one individual and each column a SNP.</p>
-<p><strong>Q1</strong>: How many SNPs and individuals are present in our data set before quality control?</p>
+<p><strong>Q1</strong>: How many SNPs and individuals are present in our data set before quality control? Save these numbers as <code>num_variants</code> and <code>num_individuals</code> respectively.</p>
 <p><strong>Q2</strong>: Please plot the data of the 320th SNP with the phenotype (<code>plot(genotype_matrix[,320] ,phenotypes)</code>). Would you say this SNP is associated with the phenotype?</p>
 <p><br><br><br></p>
 </div>
@@ -263,7 +279,6 @@ minor_allele_frequency &lt;- function(row){
 <p><br> <strong>Q4</strong>: How many SNPs show a MAF &lt; 0.01?</p>
 <p><br><br></p>
 <p>Now, we can remove the SNPs showing a MAF &lt; 0.01:</p>
-<pre class="r"><code>genotype_matrix_maf_filtered &lt;- genotype_matrix[,!maf_filter]</code></pre>
 <p><br> Make a histogram of the minor allele frequencies, to see if everything is correct before and after filtering. Use the <code>hist()</code> function.</p>
 <p><br><br> We will identify more genotypes that need to be filtered out in the next steps. Therefore, we will now keep the unfiltered genotype matrix, and only filter variants out when we known the total number of SNPs that should be removed in all the quality control steps.</p>
 <p><br><br></p>
@@ -274,7 +289,7 @@ minor_allele_frequency &lt;- function(row){
 Exp(AA) = (1-p)^2n\\
 Exp(AB) = 2 p (1-p)n\\
 Exp(BB) = p^2n
-\]</span> <br> Where <span class="math inline">\(p\)</span> is the minor allele frequency, <span class="math inline">\(n\)</span> is the number of individuals, <span class="math inline">\(A\)</span> represents the major allele and <span class="math inline">\(B\)</span> represents the minor allele. <br><br> We can identify the expected counts for genotypes <code>AA</code>, <code>AB</code>, and <code>BB</code>, by plugging in the number of individuals and minor allele frequency for each SNP. Make a matrix with the expected genotype counts for <code>AA</code>, <code>AB</code>, <code>BB</code> using <code>cbind()</code>. <br><br> The first 10 lines should look as follows:</p>
+\]</span> <br> Where <span class="math inline">\(p\)</span> is the minor allele frequency, <span class="math inline">\(n\)</span> is the number of individuals, <span class="math inline">\(A\)</span> represents the major allele and <span class="math inline">\(B\)</span> represents the minor allele. <br><br> We can identify the expected counts for genotypes <code>AA</code>, <code>AB</code>, and <code>BB</code>, by plugging in the number of individuals and minor allele frequency for each SNP. Make a matrix with the expected genotype counts for <code>AA</code>, <code>AB</code>, <code>BB</code> using <code>cbind()</code>. Call this matrix <code>expected_genotype_count</code>. <br><br> The first 10 lines should look as follows:</p>
 <pre><code>##               exp_AA    exp_AB     exp_BB
 ## 1:1118275_T 465.1250  45.75000  1.1250000
 ## 1:1120431_A 454.6997  55.60059  1.6997070
@@ -299,7 +314,7 @@ Exp(BB) = p^2n
     return(counts)
 }</code></pre>
 <p><br> <strong>Q5</strong>: How many homozygote (AA), heterozygote (AB) and homozygote (BB) genotypes for SNP 320 can you observe? <br></p>
-<p><br> Make a matrix of the observed counts using the function <code>find_observed_count()</code>, and <code>t(matrix(apply()))</code>. Hint: you will need to specify that the number of rows is 3 with <code>nrow=3</code>. The output should look like this:</p>
+<p><br> Make a matrix of the observed counts using the function <code>find_observed_count()</code>, and <code>t(matrix(apply()))</code>. Call this matrix <code>observed_genotype_count</code>. Hint: you will need to specify that the number of rows is 3 with <code>nrow=3</code>. The output should look like this:</p>
 <pre><code>##       obs_AA obs_AB obs_BB
 ##  [1,]    465     46      1
 ##  [2,]    458     49      5
@@ -318,7 +333,7 @@ chi_sq_statistics &lt;- apply((observed_genotype_count - expected_genotype_count
 <p><br> <strong>Q6</strong>: What is the range of chi-squared values? Does a high chi-squared value indicate that there is a big difference between observed and expected genotypes or not?</p>
 <p><br> In order to identify the P-value that belongs these chi-squared valued, we can look up each of the chi-squared values in a standard chi-squared distribution with one degree of freedom. The idea here is that you compare the chi-squared values we have just calculated with the expected chi-squared values to see if they deviate very much. We can find the P-values as follows:</p>
 <pre class="r"><code>hardy_weinberg_p_values &lt;- 1 - pchisq(chi_sq_statistics,1)</code></pre>
-<p><br> Make a logical vector in the same way that you did for the minor allele frequency filter. This vector contains TRUE/FALSE values for each SNP indicating if it deviates from HWE (P &lt; 1e-6), which we can use to filter out the SNPs at a later step.</p>
+<p><br> Make a logical vector called <code>hwe_p_val_filter</code> in the same way that you did for the minor allele frequency filter. This vector contains TRUE/FALSE values for each SNP indicating if it deviates from HWE (P &lt; 1e-6), which we can use to filter out the SNPs at a later step.</p>
 <p><strong>Q7</strong>: How many SNPs deviate from HWE?</p>
 <p><br><br></p>
 </div>
@@ -326,7 +341,7 @@ chi_sq_statistics &lt;- apply((observed_genotype_count - expected_genotype_count
 <h3>Step 2.3: Remove SNPs with high missing genotype rate</h3>
 <p>This step is relatively simple, but it is required for most analyses. To make sure that there are no SNPs that are missing due to technical biases, we remove all the SNPs that have at least one value missing. Missing values are encoded as <code>NA</code> in the genotype_matrix. We can identify a missing value by using the <code>is.na()</code> function in R. We can calculate the missingness per SNP by summing the number of <code>NA</code> values for one SNP across all individuals, and dividing over the number of individuals. Use <code>apply()</code> and <code>sum(is.na())</code> to calculate a vector of missingness.</p>
 <p><br> Plot the distribution of missingness using <code>hist()</code>.</p>
-<p><br><br> Based on these results, genotyping seems to be done well: the missingness is either 0 (no missingness at all) or almost 1 (SNPs are missing across all individuals). Create a logical vector, like we did before, with SNPs that have <code>missingness != 0</code>.</p>
+<p><br><br> Based on these results, genotyping seems to be done well: the missingness is either 0 (no missingness at all) or almost 1 (SNPs are missing across all individuals). Create a logical vector called <code>missingness_filter</code>, like we did before, with SNPs that have <code>missingness != 0</code>.</p>
 <p><strong>Q8</strong>: How many SNPs show high genotype rate missingness?</p>
 <p><br><br></p>
 </div>

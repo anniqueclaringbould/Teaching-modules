@@ -13,6 +13,7 @@ Teaching modules given by the UMCG department of Genetics
 ### Practical workshops about specific topics
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
 	* [Genotype files](Practicals/GWAS/celiac_gwas)
+	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 	
 <!--
 * [Differential expression](Practicals/differential-expression/rnaseq_practical1.html) !NB 2 versions
