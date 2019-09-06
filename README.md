@@ -22,7 +22,7 @@ Teaching modules given by the UMCG department of Genetics
 	* [Answers](Practicals/pathway-analysis/Pathway_analysis.html)
 -->
 * [eQTL mapping](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_adjusted270822018.html)
-	*[eQTL files](Practicals/eQTLs/eQTL_files)
+	* [eQTL files](Practicals/eQTLs/eQTL_files)
 <!--
 * [Co-expression analysis](Practicals/co-expression/CoExpression_Tutorial.html)
 	* [Answers](Practicals/co-expression/Rcommancs_Tutorial.html)
