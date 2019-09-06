@@ -22,7 +22,10 @@ Teaching modules given by the UMCG department of Genetics
 	* [Answers](Practicals/pathway-analysis/Pathway_analysis.html)
 -->
 * [eQTL mapping](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_adjusted270822018.html)
-	* [eQTL files](Practicals/eQTLs/eQTL_files)
+	* [eQTL genotypes](Practicals/eQTLs/CeD_genotypes_adjusted27082018.txt)
+	* [eQTL gene positions](Practicals/eQTLs/gene_locations.txt)
+	* [eQTL gene expression](Practicals/eQTLs/geuvadis_normalised_gene_expression_adjusted27082018.txt.zip)
+	* [eQTL SNP positions](Practicals/eQTLs/snp_locations_CeD_adjusted27082018.txt)
 <!--
 * [Co-expression analysis](Practicals/co-expression/CoExpression_Tutorial.html)
 	* [Answers](Practicals/co-expression/Rcommancs_Tutorial.html)
