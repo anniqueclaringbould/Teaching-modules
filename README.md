@@ -20,7 +20,9 @@ Teaching modules given by the UMCG department of Genetics
 * [Pathway analysis](Practicals/pathway-analysis/Pathway_analysis_students.html) !NB bonus exercise
 	* [Slides](Practicals/pathway-analysis/Pathway_analysis.pptx) 
 	* [Answers](Practicals/pathway-analysis/Pathway_analysis.html)
+-->
 * [eQTL mapping](Practicals/eQTLs) !NB 2 versions
+<!--
 * [Co-expression analysis](Practicals/co-expression/CoExpression_Tutorial.html)
 	* [Answers](Practicals/co-expression/Rcommancs_Tutorial.html)
 * [Microbiome - day 1](Practical/microbiome/Day_1.md)
