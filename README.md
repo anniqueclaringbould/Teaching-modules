@@ -22,9 +22,10 @@ Teaching modules given by the UMCG department of Genetics
 	* [eQTL gene positions](Practicals/eQTLs/gene_locations.txt)
 	* [eQTL gene expression](Practicals/eQTLs/geuvadis_normalised_gene_expression_adjusted27082018.txt.zip)
 	* [eQTL SNP positions](Practicals/eQTLs/snp_locations_CeD_adjusted27082018.txt)
+	* [eQTL answers](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_answers_adjusted27082018.html)
 
-* [Microbiome]()
-* [Single-cell]()
+* [Microbiome](Practicals/microbiome)
+* [Single-cell](Practicals/single-cell-RNA-seq)
 
 <!--
 * [Differential expression](Practicals/differential-expression/rnaseq_practical1.html) !NB 2 versions
@@ -33,11 +34,4 @@ Teaching modules given by the UMCG department of Genetics
 	* [Answers](Practicals/pathway-analysis/Pathway_analysis.html)
 * [Co-expression analysis](Practicals/co-expression/CoExpression_Tutorial.html)
 	* [Answers](Practicals/co-expression/Rcommancs_Tutorial.html)
-* [Microbiome - day 1](Practical/microbiome/Day_1.md)
-	* [Answers](Practical/microbiome/Day_1_with_code.md)
-* [Microbiome - day 2](Practical/microbiome/Day_2.md)
-	* [Answers](Practical/microbiome/Day_2_with_code.md)
-* [Single-cell]()
-* [Pharmacogenetics]()
-* [Variant classification]()
 -->
