@@ -73,7 +73,7 @@ Read in the `Microbiome.txt` as `bacteria` and `Phenotypes.txt` as `phenotypes`
 
 **Q2. Check the row names and the column names. What is the structure of each file? Report the number of columns and rows**
 
-```{r, eval=T, echo=F}
+```{r, eval=F, echo=F}
 	head(row.names(bacteria))
 	head(colnames(bacteria))
 	dim(bacteria)
