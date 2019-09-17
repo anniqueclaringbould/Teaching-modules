@@ -95,7 +95,7 @@ If we split the now names by `|` and we count the numbers of words in the result
 
 **Q3. How many species, strains, genus, families, etc. we can find in our data? Create a bar plot summarizing the number of different taxonomical levels present in our table** 
 
-To answer this question, start with setting all taxa to 0 (e.g. `kingdom <- 0`). Do this for `phylum`, `class`, `order`, `family`, `genus`, `species`, `strains`. Then make a for loop for every instance in `taxas`, where you add `+1` to each of the taxa if it is present. Use an `if` `else if` construction, starting with `if(length(unlist(strsplit(i, "\\|"000 == 1){kingdoms <- kingdoms + 1}`.
+To answer this question, start with setting all taxa to 0 (e.g. `kingdom <- 0`). Do this for `phylum`, `class`, `order`, `family`, `genus`, `species`, `strains`. Then make a for loop for every instance in `taxas`, where you add `+1` to each of the taxa if it is present. Use an `if` `else if` construction, starting with `if(length(unlist(strsplit(i, "\\|"))) == 1){kingdoms <- kingdoms + 1}`.
 ```{r, eval=T, echo=F}
 kingdoms=0
 phylum=0
@@ -149,7 +149,8 @@ You may also be interested in the mean relative abundance of a microorganism, le
 
 **Q4. How many taxonomies are absent in all the samples?**
 
-To answer this question, let's first take a look at the mean values for the first taxa (Kingdom Archaea) and the number of non-0 values. You will need to create `transposed_bacteria` (transposed version of `bacteria`), access the first observation, and use `mean()` and `sum()`. 
+To answer this question, let's first take a look at the mean values for the first taxa (Kingdom Archaea). Also look at the number of non-0 values. You will need to create `transposed_bacteria` (transposed version of `bacteria`), access the first observation, and use `mean()` and `sum()`. 
+
 ```{r, eval=T, echo=F}
 transposed_bacteria=as.data.frame(t(bacteria))
 
@@ -207,9 +208,10 @@ Save the column names of `transposed_bacteria` as the row names for `my_results`
 
 rownames(my_results) = colnames(transposed_bacteria)
 colnames(my_results) = c("Mean","N_of_non-0", "Non-0_Mean", "N_of_0", "perc_missing") 
+```
 
+```{r, eval=F, echo=F}
 ggplot(my_results, aes(perc_missing)) + geom_bar() +theme_classic()
-
 ```
 <br><br>
 
