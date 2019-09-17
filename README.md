@@ -10,7 +10,11 @@ Teaching modules given by the UMCG department of Genetics
 * [R course - day 3](R-course/plotting.html)
 	* [Answers](R-course/plottingAnswers.html)
 -->
+
 ### Practical workshops about specific topics
+* [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
+	* [Genotype files](Practicals/GWAS/celiac_gwas)
+	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
 	* [Genotype files](Practicals/GWAS/celiac_gwas)
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
@@ -24,7 +28,11 @@ Teaching modules given by the UMCG department of Genetics
 	* [eQTL SNP positions](Practicals/eQTLs/snp_locations_CeD_adjusted27082018.txt)
 	* [eQTL answers](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_answers_adjusted27082018.html)
 
-* [Microbiome](Practicals/microbiome)
+* [Microbiome](Practicals/microbiome/Day_1_2019.html)
+	*[FASTQ demo](Practicals/microbiome/demo.fastq.txt)
+	*[phenotypes](Practicals/microbiome/Phenotypes.txt)
+	*[microbiom](Practicals/microbiome/Microbiome.txt)
+
 * [Single-cell](Practicals/single-cell-RNA-seq)
 
 <!--
