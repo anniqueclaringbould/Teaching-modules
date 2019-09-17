@@ -9,7 +9,6 @@ output:
     number_sections: true  ## if you want number sections at each table header
     theme: united  # many options for theme, this one is my favorite.
     highlight: tango  # specifies the syntax highlighting style
-bibliography: Citations.ris
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -84,7 +83,7 @@ We will read in the results of differential expression analysis from previous pr
 
 ```{r, message=FALSE, warning=FALSE}
 
-cd3 <- fread('/Users/urmovosa/Documents/Teaching/iBMS/practical/RNA_seq_part/DEG_lists/diffExpGenes_cd3_all.csv')
+cd3 <- fread('/Users/NPK/UMCG/git_projects/Teaching-modules/Practicals/differential-expression-and-pathway-analysis/Results/diffExpGenes_cd3_all.csv')
 
 ```
 
@@ -178,7 +177,7 @@ KEGG_all <- enrichKEGG(gene = cd3_sig$ENTREZID,
                  qvalueCutoff = 1)
 
 # this command converts ENTREZ IDs back to HGNC symbols to ease interpretation
-KEGG_all <- setReadable(KEGG_all, OrgDb = 'org.Hs.eg.db', keytype="ENTREZID")
+KEGG_all <- setReadable(KEGG_all, OrgDb = 'org.Hs.eg.db', keyType="ENTREZID")
 ```
 
 We will accustom ourselves with the data structure of the analysis output.
@@ -350,7 +349,7 @@ For adding the plot to the HTML document: in the following command, replace the 
 ![]([YourPathName].pathview.png)
 ```
 
-![](/Users/urmovosa/Documents/Teaching/iBMS/practical/Pathway_enrichment/hsa04060.pathview.png)
+![](/Users/NPK/RNASeqPracticalSesion/hsa04060.most_sig_pathway.png)
 
 **Q7:** Same figure is also reported in the original publication [@Quinn2015, [link](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140049)]. Does it look similar or do you see any difference? Speculate, where can it come from?
 
@@ -415,19 +414,20 @@ Clusterprofiler allows to do also ORA for human diseases, making use of several 
 We will run DO enrichment analysis by asking all the results (no filtering based on FDR) and otherwise with default settings (minGSSize = 10, maxGSSize = 500). 
 
 ```{r, message=FALSE, warning=FALSE}
+library(DOSE)
 DO_all <- enrichDO(gene = cd3_sig$ENTREZID,
                    universe = cd3$ENTREZID,
                    pvalueCutoff = 1, 
                    qvalueCutoff = 1)
 
-DO_all <- setReadable(DO_all, OrgDb = 'org.Hs.eg.db', keytype = "ENTREZID")
+DO_all <- setReadable(DO_all, OrgDb = 'org.Hs.eg.db', keyType = "ENTREZID")
 
 # remove 8. column which is long and uninformative
 kable(head(DO_all@result[, -8], 15))
 
 ```
 
-**Q11:** Does resulting significant disease list make sense in relation to Coeliac disease? Are there any diseases which could show similar expression profile as Coeliac disease? If not, speculate, what could be the reason of ambigous results?
+**Q11: Does resulting significant disease list make sense in relation to Coeliac disease? Are there any diseases which could show similar expression profile as Coeliac disease? If not, speculate, what could be the reason of ambigous results?**
 
 **A:** Not really. It is not easy to interpret e.g. lung diseases in relation with Coeliac disease. Maybe "asthma" and "atopic dermatitis" might be in line as those are also immune-related diseases. However, you may see that most significant results are indicating quite general diseases (e.g. "lung disease", "skin disease", etc.) with >100 genes linked to the disease. This is due to hierchical nature of disease ontology, where there are also very broad "diseases" combining many potentially looseli related pathologies. This gives also quite broad enrichment results, as there are actually few "narrow-defined" diseases with so large number of known disease-related genes. It might be more informative to enforce upper limit for the size of tested gene sets- you can experiment with `maxGSSize`. **Hint:** Setting `maxGSSize` e.g. to 100, gives much more easily interpretable results, with immune-related diseases in top. However, <u>you should always reason the choice of analysis settings based on analytical consideration (ideally before running the analysis), not based on  which setting gives you the most appealing results!</u>
 
@@ -479,7 +479,7 @@ It is possible to easily compare the results several ORA analyses, using the fun
 # Read in and preprocess all different conditions:
 
 # Unstimulated
-unstim <- fread('/Users/urmovosa/Documents/Teaching/iBMS/practical/RNA_seq_part/DEG_lists/diffExpGenes_unstim_all.csv')
+unstim <- fread('/Users/NPK/UMCG/git_projects/Teaching-modules/Practicals/differential-expression-and-pathway-analysis/Results/diffExpGenes_unstim_all.csv')
 
 unstim <- unstim[!unstim$baseMean == 0, ]
 
@@ -488,7 +488,7 @@ unstim <- merge(unstim, entrez, by.x = 'V1', by.y = 'SYMBOL')
 unstim_overrep <- unstim[unstim$padj < 0.05 & abs(unstim$log2FoldChange) > 1, ]
 
 # CD3
-cd3 <- fread('/Users/urmovosa/Documents/Teaching/iBMS/practical/RNA_seq_part/DEG_lists/diffExpGenes_cd3_all.csv')
+cd3 <- fread('/Users/NPK/UMCG/git_projects/Teaching-modules/Practicals/differential-expression-and-pathway-analysis/Results/diffExpGenes_cd3_all.csv')
 
 cd3 <- cd3[!cd3$baseMean == 0, ]
 
@@ -497,7 +497,7 @@ cd3 <- merge(cd3, entrez, by.x = 'V1', by.y = 'SYMBOL')
 cd3_overrep <- cd3[cd3$padj < 0.05 & abs(cd3$log2FoldChange) > 1, ]
 
 # PMA
-pma <- fread('/Users/urmovosa/Documents/Teaching/iBMS/practical/RNA_seq_part/DEG_lists/diffExpGenes_pma_all.csv')
+pma <- fread('/Users/NPK/UMCG/git_projects/Teaching-modules/Practicals/differential-expression-and-pathway-analysis/Results/diffExpGenes_pma_all.csv')
 
 pma <- pma[!pma$baseMean == 0, ]
 

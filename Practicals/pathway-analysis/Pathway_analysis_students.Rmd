@@ -9,7 +9,6 @@ output:
     number_sections: true  ## if you want number sections at each table header
     theme: united  # many options for theme, this one is my favorite.
     highlight: tango  # specifies the syntax highlighting style
-bibliography: Citations.ris
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -38,12 +37,20 @@ install.packages('ggplot2')     # Plotting framework
 install.packages('dplyr')       # Powerful package for data management
 
 # These packages are from Bioconductor
-source("https://bioconductor.org/biocLite.R")     # Indicate the package repository
-biocLite("clusterProfiler")                       # Package for enrichment tests
-biocLite("org.Hs.eg.db")                          # Human gene annotation package
-biocLite("pathview")                              # For visualization of enriched KEGG pathways
-biocLite("topGO")                                 # Package for GO enrichment analysis
-biocLite("DOSE")                                  # Package for disease enrichment analysis
+install.packages("BiocManager")
+BiocManager::install("clusterProfiler")
+BiocManager::install("org.Hs.eg.db")
+BiocManager::install("pathview")
+BiocManager::install("topGO")
+BiocManager::install("DOSE")
+
+### Or with R version < 3.5
+# source("https://bioconductor.org/biocLite.R")     # Indicate the package repository
+# biocLite("clusterProfiler")                       # Package for enrichment tests
+# biocLite("org.Hs.eg.db")                          # Human gene annotation package
+# biocLite("pathview")                              # For visualization of enriched KEGG pathways
+# biocLite("topGO")                                 # Package for GO enrichment analysis
+# biocLite("DOSE")                                  # Package for disease enrichment analysis
 ```
 
 ## Load necessary packages
@@ -81,6 +88,7 @@ We will read in the results of differential expression analysis from previous pr
 
 ```{r, message=FALSE, warning=FALSE, eval=FALSE}
 # Read in CD3 dataset.
+
 cd3 <- fread('[path_to_the_diff_exp_folder]/[cd3_diff_exp_table]')
 
 ```
@@ -491,6 +499,4 @@ Sys.time()                # Prints the information about analysis time stamp.
 sink()                    # Close the connection to file.
 ```
 
-***
 
-# References

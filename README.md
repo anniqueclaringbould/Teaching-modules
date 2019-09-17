@@ -16,7 +16,11 @@ Teaching modules given by the UMCG department of Genetics
 	* [Genotype files](Practicals/GWAS/celiac_gwas)
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 
-* [gene expression]()	
+* [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)	
+	* [Differential gene expression answers](Practicals/differential-expression/rnaseq_diff_expr.html)
+
+* [Pathway analysis](Practicals/pathway-analysis/Pathway_analysis_students.html)
+	* [Pathway analysis answers](Practicals/pathway-analysis/Pathway_analysis.html)
 
 * [eQTL mapping](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_adjusted270822018.html)
 	* [eQTL genotypes](Practicals/eQTLs/CeD_genotypes_adjusted27082018.txt)

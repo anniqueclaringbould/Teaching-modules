@@ -1,0 +1,284 @@
+---
+title: "RNASeq - Differential expression and pathway analysis"
+output:
+  html_document:
+    depth: 3
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+date: "03/09/2019"
+---
+
+# Introduction
+In this practical session of RNASeq analysis, we will go through the most basic steps to perform a differential expression analysis. Due to time constraints we will skip the alignment and counting of reads per gene and start with a publically available expression matrix.
+
+In this practical session, the differential expression analysis will be performed using the [__DESeq2__](http://bioconductor.org/packages/release/bioc/html/DESeq2.html) package from [Love, _et al_](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8). Other packages in R could also provide similar or comparable results such as: [edgeR](http://bioconductor.org/packages/release/bioc/html/edgeR.html) or [limma](https://bioconductor.org/packages/release/bioc/html/limma.html).
+
+
+## Public data
+There are several repositories from which we can browse and retrieve RNASeq and microarray based expression data. The most commonly used ones are: 
+
+* [GEO](https://www.ncbi.nlm.nih.gov/geo/)
+* [ArrayExpress](https://www.ebi.ac.uk/arrayexpress/)
+* [ENA](http://www.ebi.ac.uk/ena)
+
+Both GEO and ArrayExpress and routinely synchronized with each other, and are the repositories were processed data can also be stored. On the other hand, ENA covers raw sequencing data, sequence assembly information and functional annotation, which could potentially be processed to generate gene counts. 
+
+
+### Case study 
+For this practical session we will make use of a dataset comprised of 74 transcriptome profiles of CD4+ T cells from celiac disease patients and healthy controls, which have also been subjected to two different immune stimulation with CD3 and PMA. You can find the dataset here: [GSE69549](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE69549). Download the supplementary data (GSE69549_RAW.tar).
+
+**Q1 Read the abstract from the paper this data is from. What is the most upregulated gene in CD4+ T cells from CD patients compared to controls?**
+
+**Q2 What is PMA stimulation?**
+
+**Q3 Is CD3 stimulation more or less specific for T-cells, and why would it be important to have a T-cell specific stimulation for this study? **
+
+
+### Installing packages 
+
+```{r installing packages, message=FALSE, warning=FALSE, eval=FALSE}
+## Install packages from CRAN 
+install.packages("ggsci")
+install.packages("ggplot2")
+install.packages("gridExtra")
+install.packages("ggrepel")
+install.packages("RColorBrewer")
+install.packages("pheatmap")
+install.packages("VennDiagram")
+install.packages("gridExtra")
+
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+BiocManager::install("biomaRt")
+                   
+### Or with R version < 3.5
+# source("https://bioconductor.org/biocLite.R")
+# biocLite("DESeq2")
+# biocLite("biomaRt")
+```
+
+
+### Set up working directory 
+Let's create a new working directory in order to save our data and results 
+
+```{r workingDir, message=FALSE, warning=FALSE, eval=FALSE}
+# Create the new directory 
+dir.create("~/RNASeqPracticalSesion/")
+# Change the working directoy 
+dir.create("~/RNASeqPracticalSesion/Data/")
+```
+
+Once you have created this new folder _RNASeqPracticalSesion_ and the _Data_ folder within, copy the ´GSE69549_RAW.tar´ file to ~/RNASeqPracticalSesion/Data/ and unpack it and unzip the resulting .txt.gz files. 
+
+### Create a count table
+We have downloaded 74 trascriptome profiles from GEO, we need to load and merge these individual transcriptomes into one single table, which should have genes by rows and samples by columns. 
+
+```{r Count Table, message=FALSE}
+setwd("~/RNASeqPracticalSesion/")
+
+# Get all file names with a certain pateern from a directary
+fileList <- list.files("./Data/", pattern = ".txt", full.names = TRUE) 
+# For each of the components of the fileList, read them into R, and arrange them in a list.
+countList <- lapply(fileList, read.delim, sep="\t", header=TRUE, row.names=1)
+# Take each the loaded matrix and merge the by it's column (cbind)
+countTable <- do.call(cbind, countList)
+
+# Check for the dimentions of the count table. ROWS x COLUMS
+dim(countTable)
+# Print the firs 5 rows, by the first 5 columns 
+countTable[1:5,1:5]
+# remove the countList object
+rm(countList)
+```
+We now have a matrix with 23,228 genes (rows) and 74 transcriptomes (columns).
+
+### Column data
+Since differential expression analysis is the comparison of gene expression between one or more conditions. Therefore, we need to generate a data.frame object that contains the experiment design, and can match this information to our countTable.
+```{r colData, message=FALSE}
+# Print the"head" of the column names. 
+head(colnames(countTable))
+
+# Use the information in the column names to generate a data.frame comprising the sample information.
+colData <- data.frame(row.names = colnames(countTable), 
+                      type= unlist(lapply(colnames(countTable), 
+                                          function(x){unlist(strsplit(x, split = "_"))[1]})), 
+                      sample= unlist(lapply(colnames(countTable), 
+                                            function(x){unlist(strsplit(x, split = "_"))[2]})), 
+                      stimulation= unlist(lapply(colnames(countTable), 
+                                                 function(x){unlist(strsplit(x, split = "_"))[3]}))
+)
+
+# Add library size, which is the total ammount of gene reads per sample
+colData$libSize <- colSums(countTable)
+#First 10 rowns of the colData object
+head(colData)
+
+# Make sure that the colnames of your count table are matching with the row names of your colData
+all(rownames(colData) %in% colnames(countTable))
+
+# Save your countTable and colData
+write.csv(countTable, file="countTable.csv")
+write.csv(colData, file="colData.csv")
+
+```
+
+
+Lets separate the cohort into 3 different set of samples depending on the stimulation status, hence we will have 3 count tables, and 4 colData objects: 
+1. Unstimulated samples
+2. Stimulated with CD3
+3. Stimulated with PMA
+
+
+Using the function which, we are can get back the index and colnames from count table using the colData object. 
+```{r Separate cohort, message=FALSE}
+# table generates a table of frequencies given a vector, we can check how many samples we should have per stimulation
+table(colData$stimulation)
+
+# It's possible to include two vectors and count frequencies given two conditions. 
+table(colData$stimulation,colData$type)
+
+unstim_sampleNames <- rownames(colData)[which(colData$stimulation == "UNS")] 
+unstim_countTable <- countTable[,unstim_sampleNames]
+unstim_colData <- colData[unstim_sampleNames,] #colData has sample names by row
+  
+cd3_sampleNames <- rownames(colData)[which(colData$stimulation == "CD3")] 
+cd3_countTable <- countTable[,cd3_sampleNames]
+cd3_colData <- colData[cd3_sampleNames,] #colData has sample names by row
+
+pma_sampleNames <- rownames(colData)[which(colData$stimulation == "PMA")] 
+pma_countTable <- countTable[,pma_sampleNames]
+pma_colData <- colData[pma_sampleNames,] #colData has sample names by row
+
+```
+
+# Differential expression analysis
+## Definition of differential expression
+
+The definition of a differentially expressed gene usually depends on whether or not a particular gene is significantly (p-value = 0.05, after multiple testing correction) over or under expressed when compared to another class (can be different treatment, control, tissue etc,). Nevertheless, we can be bit more strict in this definition, we could require a lower p-value (such as 0.01, or 0.001), and require a certain difference of expression between the two conditions. This difference between two conditions can be interpreted as the log2 fold change ( log2(mean expression condition 1 / mean expression condition 2) ). 
+
+**Q4** The next step will be selecting differentially expressed genes between unstimulated vs control, CD3+ stimulation vs control, and pma stimulation versus . Before running this, which of these do you expect to have the least amount of differentially epressed genes and why?
+
+
+```{r Differential expression, message=FALSE, warning=FALSE}
+# Load 
+library(DESeq2)
+library(ggplot2)
+library(ggsci)
+library(ggrepel)
+
+# To properly compare control versus celiac, we need to define that in ourt colData objects,
+# therefore we need to set the colData$type as a factor, and the firs level should be control 
+
+unstim_colData$type <- factor(unstim_colData$type, levels= c("Control", "Coeliac"))
+cd3_colData$type <- factor(cd3_colData$type, levels= c("Control", "Coeliac"))
+pma_colData$type <- factor(pma_colData$type, levels= c("Control", "Coeliac"))
+
+# We now generate the new DESeq objects and run the differential expression analysis.
+dds_unstim <- DESeqDataSetFromMatrix(countData = unstim_countTable,
+                              colData = unstim_colData,
+                              design = ~ type)
+
+dds_unstim <- DESeq(dds_unstim)
+res_unstim <- results(dds_unstim)
+
+head(res_unstim)
+
+# Given the conditions we declared for differential expression analysis we can subset our list of 
+de_unstim <- res_unstim [which(res_unstim$padj <= 0.05),]
+nrow(de_unstim)
+
+
+dds_cd3 <- DESeqDataSetFromMatrix(countData = cd3_countTable,
+                              colData = cd3_colData,
+                              design = ~ type)
+dds_cd3 <- DESeq(dds_cd3)
+res_cd3 <- results(dds_cd3)
+de_cd3 <- res_unstim [which(res_cd3$padj <= 0.05),]
+
+
+dds_pma <- DESeqDataSetFromMatrix(countData = pma_countTable,
+                              colData = pma_colData,
+                              design = ~ type)
+dds_pma <- DESeq(dds_pma)
+res_pma <- results(dds_pma)
+de_pma <- res_unstim [which(res_pma$padj <= 0.05),]
+nrow(de_pma)
+
+```
+
+**Q5 In the above code, DESeq normalized the counts using Median of ratios method. Unlike RPK/RPKM, this does not correct for read length. Why do you think this is not necesarry?**
+
+**Q6 Compare the overlap in differentially epressed genes between the groups, e.g. using a venn diagram. Was your answer for Q4 correct? Are the results as you expected? ** 
+
+**Q7 How many genes are found differentially expressed in all conditions? Do you think these genes would be interesting to look into or not? Why (not)?**
+
+
+## Visualization of Differentially expressed genes
+
+### Volcano Plot
+The volcano Plot is a great way to visualize your differentially expressed genes. 
+
+By definition a volcano plot has in it's X-axis the log2(fold change) per gene, whilst on the Y-axis the -log10(p Value) per gene. We already have all this information in our "res" objects from the DESeq2. 
+
+
+```{r volcano 2, message=FALSE, warning=FALSE, fig.width=15, fig.height=7}
+library(gridExtra)
+pData <- as.data.frame(res_unstim[which(!is.na(res_unstim$padj)),])
+pData$top10label <- NA
+pData$top10label[order(pData$padj)[1:10]] <- rownames(pData)[order(pData$padj)[1:10]]
+unstim_Volcano <- ggplot(pData, aes(x=log2FoldChange, y= -log10(padj)))+
+                    geom_point(aes(color= padj <= 0.05))+
+                    geom_hline(yintercept = 0, lwd=1, alpha= 0.6)+
+                    geom_vline(xintercept = 0, lwd=1, alpha= 0.6)+
+                    scale_color_d3()+
+                    ggtitle("Unstimulated")+
+                    geom_text_repel(aes(label=top10label))+ ##add the lables in the top 10 
+                    theme_bw()+
+                    theme(legend.position = "bottom")
+
+
+```
+
+**Q8 Do the same for the CD3+ and PMA stimulated data. Do you find the same results as was reported in the manuscript (see Q1)?** 
+
+**Q9 In the abstract the authors mention BACH2. What is the p-value and log-fold change of BACH2 in the CD3+ differential group? Is it in the top most differentially expressed genes? If not, do you expect it to be?**
+
+### Heatmap of differentially expressed genes
+Heatmaps are color coded, graphical representations of a matrix. The rows and columns of this matrix can be arranged in a certain way to showcase the similarities between columns and rows. This arrangement of columns and rows can be using an unsupervised approach such as hierarchical clustering. 
+
+We firstly need normalize the expression levels to compare the expression levels between samples. 
+
+```{r heatmap, message=FALSE}
+library(pheatmap)
+
+vst_unstim <- assay(vst(dds_unstim))
+deGenes <- vst_unstim[rownames(de_unstim),]
+pheatmap(deGenes, scale = "row",show_rownames = FALSE, main = "Differential expressed genes unstimulated")
+
+```
+
+
+**Q10 Do the same for CD3+ and PMA stimulation. What do you think are the advantages of a heatmap over a volcano plot?**
+
+Finally, write the expression data for CD3 to a file, as we will use it for the pathway analysis.
+
+```{r write.csv, message=FALSE, warning=FALSE}
+# Lets create a new directory to save our results
+dir.create("./Results/")
+
+# The write.csv function will generate an Excel "friendly" file.
+unstim_fileName <- "./Results/diffExpGenes_unstim_all.csv"
+write.csv(res_unstim, unstim_fileName)
+
+cd3_fileName <- "./Results/diffExpGenes_cd3_all.csv"
+write.csv(res_cd3, cd3_fileName)
+
+pma_fileName <- "./Results/diffExpGenes_pma_all.csv"
+write.csv(res_pma, pma_fileName)
+
+```
