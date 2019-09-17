@@ -162,7 +162,7 @@ First, have a look at the phenotypes, plot a histogram of them (use the `hist()`
 
 Now if we look at the `genotype_matrix` object, we will see that it is a big matrix: each row represents one individual and each column a SNP.
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 dim(genotype_matrix) # how many variants and how many individuals are present
 
 genotype_matrix[1:100,1] #shows 100 individual genotypes for the first SNP
@@ -209,7 +209,7 @@ minor_allele_frequency <- function(row){
 <br>
 Now using the `apply()` function, we are able to get a vector of SNPs with minor allele frequencies called `minor_allele_frequency_per_snp`. We can then make a logical vector to identify SNPs with a MAF lower than 0.01 called `maf_filter`. 
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 
 #Now, do it for all the snps
 minor_allele_frequency_per_snp <- apply(genotype_matrix, 2, minor_allele_frequency)
@@ -232,7 +232,7 @@ genotype_matrix_maf_filtered <- genotype_matrix[,!maf_filter]
 
 <br>
 Make a histogram of the minor allele frequencies, to see if everything is correct before and after filtering. Use the `hist()` function.
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 hist(minor_allele_frequency_per_snp)
 hist(minor_allele_frequency_per_snp[!maf_filter])
 ```
@@ -258,7 +258,7 @@ We can identify the expected counts for genotypes `AA`, `AB`, and `BB`, by plugg
 <br><br>
 The first 10 lines should look as follows:
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Check the number of individuals and SNPs before quality control
 num_individuals <- nrow(genotype_matrix)
 num_variants <- ncol(genotype_matrix)
@@ -311,7 +311,7 @@ find_observed_count(genotype_matrix[,320])
 
 <br>
 Make a matrix of the observed counts using the function `find_observed_count()`, and `t(matrix(apply()))`. Hint: you will need to specify that the number of rows is 3 with `nrow=3`. The output should look like this:
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Calculate observed genotype counts for all SNPs
 observed_genotype_count <- t(matrix(apply(genotype_matrix, 2, find_observed_count), nrow=3))
 
@@ -343,19 +343,19 @@ max(chi_sq_statistics)
 <br>
 In order to identify the P-value that belongs these chi-squared valued, we can look up each of the chi-squared values in a standard chi-squared distribution with one degree of freedom. The idea here is that you compare the chi-squared values we have just calculated with the expected chi-squared values to see if they deviate very much.
 We can find the P-values as follows:
-```{r, message=FALSE, warning=FALSE, eval=TRUE }
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 hardy_weinberg_p_values <- 1 - pchisq(chi_sq_statistics,1)
 ```
 
 <br>
 Make a logical vector in the same way that you did for the minor allele frequency filter. This vector contains TRUE/FALSE values for each SNP indicating if it deviates from HWE (P < 1e-6), which we can use to filter out the SNPs at a later step.
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 hwe_p_val_filter <- hardy_weinberg_p_values < 1e-6
 ```
 
 **Q7**: How many SNPs deviate from HWE?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 # Check how many SNPs deviate from HWE and should be removed later
 genotype_matrix_hwe_filtered <- genotype_matrix[,!hwe_p_val_filter]
 dim(genotype_matrix_hwe_filtered)
@@ -367,7 +367,7 @@ dim(genotype_matrix_hwe_filtered)
 This step is relatively simple, but it is required for most analyses. 
 To make sure that there are no SNPs that are missing due to technical biases, we remove all the SNPs that have at least one value missing. Missing values are encoded as `NA` in the genotype_matrix. We can identify a missing value by using the `is.na()` function in R. We can calculate the missingness per SNP by summing the number of `NA` values for one SNP across all individuals, and dividing over the number of individuals. Use `apply()` and `sum(is.na())` to calculate a vector of missingness.
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #missing snps are encoded as NA in our data.  so we count them and divide over the number of individuals.
 missingness <- apply(genotype_matrix, 2, function(x) sum(is.na(x))) / num_individuals
 ```
@@ -381,12 +381,12 @@ hist(missingness)
 
 <br><br>
 Based on these results, genotyping seems to be done well: the missingness is either 0 (no missingness at all) or almost 1 (SNPs are missing across all individuals). Create a logical vector, like we did before, with SNPs that have `missingness != 0`.
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 missingness_filter <- missingness != 0
 ```
 
 **Q8**: How many SNPs show high genotype rate missingness?
-``` {r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+``` {r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 genotype_matrix_missingness_filtered <- genotype_matrix[,!missingness_filter]
 dim(genotype_matrix_missingness_filtered)
 ```
@@ -434,7 +434,7 @@ To identify related individuals, we make a genetic relationship matrix (GRM). Th
 <br>
 The GRM can be calculated as follows:
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE }
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 
 #Make a genetic relatedness matrix (complicated in the math)
 
@@ -458,7 +458,7 @@ grm <- (w_mat %*% t(w_mat)) / num_variants
 
 <br>
 Create a heat map to check the relatedness of all individuals. Use the function `heatmap()` with the `scale = "none"` option. Can you recognise any potential contaminations?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 Colors=colorRampPalette(c('blue','white','red'))(20)
 Breaks = c(seq(-1,1,by=0.1))
 
@@ -489,7 +489,7 @@ relatedness_filter[relatednes_individuals] <- TRUE
 
 <br>
 **Q10**: How many individuals should be excluded due to relatedness?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 
 #Check the number of related individuals
 genotype_matrix_relatedness_filtered <- genotype_matrix_geno_qc[!relatedness_filter,]
@@ -521,7 +521,7 @@ You will now filter out the outlying individuals using a PC threshold that you d
 
 <br>
 Choose a threshold that eliminates all clear outliers. Make a logical vector `pca_filter` with TRUE/FALSE values for each individual based on whether they are an outlier given your threshold. A table of this logical vector should look like this:
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #We decide on a threhold for the principal components to filter on
 
 pca_filter <- principal_components$x[,2] < -0.4
@@ -541,7 +541,7 @@ dim(genotype_matrix_pcas_filtered)
 
 <br>
 Remove individuals that do not pass the pca_filter or relatedness_filter from the `genotype_matrix_geno_qc` and from the `phenotypes` matrices. Call the new matrices `genotype_matrix_post_qc` and `phenotypes_post_qc`.
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Remove individuals from the genotype matrix based on relatedness and PCA, and we have concluded our QC steps
 genotype_matrix_post_qc <- genotype_matrix_geno_qc[!pca_filter & !relatedness_filter,]
 
@@ -578,7 +578,7 @@ do_quantative_association <- function(genotypes, phenotypes){
 
 <br>
 Apply the model to all genotypes using `t(matrix(apply())`, be sure to include the `phenotypes_post_qc` as the second argument, and indicate that `nrow=4`. Save the output as `associations`. This analysis should take a little while (~2 min). The resulting `associations` should look like this:
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 
 # It takes a while (about 2 minutes)
 associations <- t(matrix(apply(genotype_matrix_post_qc, 2, do_quantative_association, phenotypes=phenotypes_post_qc), nrow=4))
@@ -609,7 +609,7 @@ associations_with_position_df <- data.frame(chr = as.numeric(associations_with_p
 <br>
 Finally, we plot the Manhattan plot using the package `ggplot2`. We want the x-axis to reflect the chromosomal `position` and the y-axis should be the `-log10(p_val)`. It's good practice to distinguish the chromosomes by giving each a different colour: `col=as.factor(chr))`. Lastly, since we only know the positions of each SNP per chromosome, we want to add `facet_grid(.~chr, scales="free_x")`. If everything worked, it should look like this:
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 require(ggplot2)
 ggplot(associations_with_position_df, aes(x=position, y=-log10(p_val), col=as.factor(chr))) + 
   facet_grid(.~chr, scales="free_x") + 
@@ -618,7 +618,7 @@ ggplot(associations_with_position_df, aes(x=position, y=-log10(p_val), col=as.fa
 
 <br>
 The standard genome wide significance threshold is thought to be P < 5E-8. Add this significance line to the plot using `geom_hline()`. Remember the scale of the y-axis when you add the threshold!
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 pval <- 5e-8
 require(ggplot2)
 ggplot(associations_with_position_df, aes(x=position, y=-log10(p_val), col=as.factor(chr))) + 

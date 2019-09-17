@@ -1,0 +1,512 @@
+---
+title: "Mapping eQTLs answers"
+author: "Annique Claringbould"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+***
+<br><br><br>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Simple eQTL mapping
+
+<br>In this tutorial, you will identify expression quantitative loci (eQTLs). You will be provided with a list of single nucleotide polymorphisms (SNPs) that were identified in GWAS studies of celiac disease. 
+
+Let's start by cleaning our R environment and installing the necessary package: **MatrixEQTL**.  
+
+```{r library, eval=TRUE}
+#rm(list = ls())
+#install.packages('MatrixEQTL')
+library(MatrixEQTL)
+```
+
+<br><br>The package was developed by Andrey A. Shabalin, more information can be found here: http://www.bios.unc.edu/research/genomic_software/Matrix_eQTL/
+
+<br><br>**Q1. Find out from the documentation on this package which models we can choose. What are the main differences between the models? **
+
+```{r answer_q1, eval=TRUE, echo=FALSE}
+cat('From documentation:
+* linear - assuming the genotype only has an additive effect on expression
+* ANOVA - allows genotype to have both additive and dominant effect
+* linear cross - testing interaction between genotype and the last covariate');
+```
+
+<br><br>We start by setting the base directory, which should be the directory where you store the files from this tutorial: the genotypes, gene expression, SNP locations, and gene locations.
+
+```{r base_dir, eval=TRUE, echo=TRUE}
+base.dir ='/Users/anniqueclaringbould/Documents/Teaching/BiomedicalSciences/NewBiology/CeD_eQTLs/'
+```
+
+<br><br>Then we set the model to linear:
+
+```{r model, eval=TRUE, echo=TRUE}
+useModel = modelLINEAR
+```
+
+<br><br>Set the file locations, so running the model becomes easy.
+
+```{r data_locations, eval=TRUE, echo=TRUE}
+# Genotype file names
+SNP_file_name = paste(base.dir, "CeD_genotypes_adjusted27082018.txt", sep="");
+snps_location_file_name = paste(base.dir, "snp_locations_CeD_adjusted27082018.txt", sep="");
+
+# Gene expression file names
+expression_file_name = paste(base.dir, "geuvadis_normalised_gene_expression_adjusted27082018.txt", sep="");
+gene_location_file_name = paste(base.dir, "gene_locations.txt", sep="");
+
+# Output file name
+output_file_name = paste0(base.dir, "results_cis_eQTLs");
+```
+
+<br><br>Next, we need to decide on the p-value threshold. Only the associations that are significant at this level will be saved in your output file. We often use a p-value threshold of 5 * 10^-8 to indicate if a test is significant at the genome wide level. However, here we choose a slightly less stringent threshold, so you can also have a look at less significant effects. 
+
+```{r pvalue, eval=TRUE, echo=TRUE}
+pvOutputThreshold = 5e-7
+```
+
+<br><br>Let's load the genotype data in. For this first analysis, we do not need the SNP and gene locations yet. MatrixEQTL comes with a specific way to load in large datasets. We only use a limited list of SNPs, so it is not particularly useful here.
+
+```{r load_geno, eval=TRUE, echo=TRUE}
+snps = SlicedData$new();
+snps$fileDelimiter = "\t";      # the TAB character
+snps$fileOmitCharacters = "NA"; # denote missing values;
+snps$fileSkipRows = 1;          # one row of column labels
+snps$fileSkipColumns = 1;       # one column of row labels
+snps$fileSliceSize = 2000;      # read file in slices of 2,000 rows
+snps$LoadFile(SNP_file_name)
+```
+
+<br><br>**Q2. For how many SNPs did you just load the genotypes? And for how many people?**  
+<br>Hint: Individual names are coded here to start with 'ERR', and genetic variants are identified by their reference SNP (rs) number.
+
+```{r answer_q2_code, eval=FALSE, echo=TRUE}
+dim(snps)[1]
+dim(snps)[2]
+```
+
+```{r answer_q2, eval=TRUE, echo=FALSE}
+cat('Answer to Q2:\n There were ', dim(snps)[1], ' SNPs,\n and ', dim(snps)[2], ' people \n');
+```
+
+<br><br>We will now load the expression data. As there are many genes in the matrix, the 'slicing' of the data will become useful here.
+
+```{r load_exp, eval=TRUE, echo=TRUE}
+gene = SlicedData$new();
+gene$fileDelimiter = "\t";      # the TAB character
+gene$fileOmitCharacters = "NA"; # denote missing values;
+gene$fileSkipRows = 1;          # one row of column labels
+gene$fileSkipColumns = 1;       # one column of row labels
+gene$fileSliceSize = 2000;      # read file in slices of 2,000 rows
+gene$LoadFile(expression_file_name)
+```
+
+<br><br>**Q3. For how many genes did you just load the expression values? And for how many people? Are there more samples in the genotype or in the expression dataset?**  
+
+```{r answer_q3_code, eval=FALSE, echo=TRUE}
+dim(gene)[1]
+dim(gene)[2]
+```
+
+```{r answer_q3, eval=TRUE, echo=FALSE}
+cat('Answer to Q3:\n There were ', dim(gene)[1], ' genes,\n and ', dim(gene)[2], ' people \n');
+cat('There is an equal number of individuals with gene expression and genotypes \n')
+```
+
+<br><br>We will now run an eQTL mapping analysis for the first time. By naming this model 'model 1', and giving other models different names, you can save results with different parameters. Do not forget to also change the output_file_name if you want to save the results.
+
+```{r model1, eval=TRUE, echo=TRUE, results = 'hide'}
+model1 = Matrix_eQTL_engine(
+  snps = snps,
+  gene = gene,
+  output_file_name = output_file_name,
+  pvOutputThreshold = pvOutputThreshold,
+  useModel = useModel, 
+  verbose = TRUE,
+  pvalue.hist = 100,
+  min.pv.by.genesnp = FALSE,
+  noFDRsaveMemory = FALSE)
+```
+
+<br><br>**Q4. How many eQTLs do you find?** 
+```{r answer_q4_code, eval=FALSE, echo=TRUE}
+dim(model1$all$eqtls)[1]
+```
+
+```{r answer_q4, eval=TRUE, echo=FALSE}
+cat('Answer to Q4:\n There were', dim(model1$all$eqtls)[1], 'eQTLs\n');
+```
+
+<br><br>**Q5. What columns are present in the output?**  
+```{r answer_q5_code, eval=FALSE, echo=TRUE}
+str(model1)
+```
+
+```{r answer_q5, eval=TRUE, echo=FALSE}
+cat('Answer to Q5:\n The columns present are:\n')
+str(model1)
+```
+
+<br><br>The new object 'model1' contains some interesting information about the eQTL analysis. The input parameters, how long the analysis took, and the eQTL results are all saved here. You can use this info to display the results:
+```{r result_code, eval=FALSE, echo=TRUE}
+model1$time.in.sec
+show(model1$all$eqtls)
+```
+
+```{r result, eval=TRUE, echo=FALSE}
+cat('Analysis done in: ', model1$time.in.sec, ' seconds', '\n');
+cat('Detected eQTLs:', '\n');
+show(model1$all$eqtls)
+```
+
+<br><br>**Q6. How many tests were performed in total?**
+```{r answer_q6_code, eval=FALSE, echo=TRUE}
+model1$all$ntests
+```
+
+```{r answer_q6, eval=TRUE, echo=FALSE}
+cat('Answer to Q6:\n The number of tests is', model1$all$ntests, '\n')
+```
+<br><br>**Q7. What percentage of those is significant, according to the threshold that we set earlier?**
+```{r answer_q7_code, eval=TRUE, echo=TRUE}
+sign <- round((model1$all$neqtls/model1$all$ntests)*100, digits = 4)
+```
+
+```{r answer_q7, eval=TRUE, echo=FALSE}
+cat('Answer to Q7:\n The percentage of significance is', sign,'%\n')
+```
+
+<br><br>In the results that we have created now, the associations between all SNPs and all genes are tested. However, you have learned that there is a difference between *cis*-eQTLs and *trans*-eQTLs. Therefore, we will now continue to run the model separately SNPs that lie close to the genes, and those that are further away from the gene.  
+
+***
+<br><br><br>
+
+## *Cis*- and *trans*-eQTL mapping
+
+<br>The first thing to do, again, is to set the names of the output files. This time you will get two separate files.
+
+```{r output_location, eval=TRUE}
+output_file_name_cis = paste(base.dir,"cis_eQTLs_CeD_out.txt", sep="")
+output_file_name_tra = paste(base.dir,"trans_eQTLs_CeD_out.txt", sep="")
+```
+
+<br><br>Next, we will set a P-value threshold for both the *cis*-eQTL and *trans*-eQTL associations. Let's start with **5e-2** and **5e-5**, respectively.
+
+```{r pvalues, eval=TRUE}
+# Only associations significant at this level will be saved
+pvOutputThreshold_cis = 5e-2
+pvOutputThreshold_tra = 5e-5
+```
+
+<br><br>Read in the files with SNP and gene positions.
+
+```{r positions, eval=TRUE}
+snpspos = read.table(snps_location_file_name, header = TRUE, stringsAsFactors = FALSE)
+genepos = read.table(gene_location_file_name, header = TRUE, stringsAsFactors = FALSE)
+```
+
+<br><br>**Q8. What information is provided for each SNP and each gene in these files? How many SNPs and genes are available in these files?**
+```{r answer_q8_code, eval=FALSE, echo=TRUE}
+dim(snpspos)[1]
+dim(genepos)[1]
+```
+
+```{r answer_q8, eval=TRUE, echo=FALSE}
+cat('Answer to Q8:\n There is information about the chromosomal location of each SNP and gene \n There is information on', dim(snpspos)[1], 'SNPs and', dim(genepos)[1], 'genes\n')
+```
+
+<br><br>Last, we need to set the maximum distance between a SNP and the gene, that we would still call a *cis-*eQTL. The unit of measurement is basepairs. Set the distance to 1Mb.
+
+```{r distance, eval=TRUE}
+cisDist = 1000000
+```
+
+<br><br>Since we still have the data loaded from the first run, the next step is to simply run the model, this time with output for cis- and trans-eQTLs separately.
+
+```{r output_files, eval=TRUE}
+output_file_name_cis = "results_cis_eQTLs_only";
+output_file_name_tra = "results_trans_eQTLs_only"
+```
+
+```{r model2, eval=TRUE, results = 'hide'}
+model2 = Matrix_eQTL_main(
+  snps = snps, 
+  gene = gene, 
+  output_file_name     = output_file_name_tra,
+  pvOutputThreshold     = pvOutputThreshold_tra,
+  useModel = useModel, 
+  verbose = TRUE, 
+  output_file_name.cis = output_file_name_cis,
+  pvOutputThreshold.cis = pvOutputThreshold_cis,
+  snpspos = snpspos, 
+  genepos = genepos,
+  cisDist = cisDist,
+  pvalue.hist = 100,
+  min.pv.by.genesnp = FALSE,
+  noFDRsaveMemory = FALSE)
+```
+
+<br><br>**Q9. How many *cis* and *trans*-eQTLs did you find?**
+```{r answer_q9_code, eval=FALSE, echo=TRUE}
+model2$cis$neqtls
+model2$trans$neqtls
+```
+
+```{r answer_q9, eval=TRUE, echo=FALSE}
+cat('Answer to Q9:\n There are', model2$cis$neqtls, 'cis-eQTLS and', model2$trans$neqtls, 'trans-eQTLs\n')
+```
+
+<br><br>**Q10. How many *cis* and *trans* tests were performed? Where does this difference in scale come from?**
+```{r answer_q10_code, eval=FALSE, echo=TRUE}
+model2$cis$ntests
+model2$trans$ntests
+```
+
+```{r answer_q10, eval=TRUE, echo=FALSE}
+cat('Answer to Q10:\n There are', model2$cis$ntests, 'cis tests and', model2$trans$ntests, 'trans tests\n')
+cat('The difference is because in cis-eQTLs only a limited number of SNP-gene combinations is tested, as defined by genes that are close to the SNPs.')
+```
+
+<br><br>**Q11. What percentage of *cis* and *trans* tests are significant eQTLs?**
+```{r answer_q11_code, eval=TRUE, echo=TRUE}
+cis <- round((model2$cis$neqtls/model2$cis$ntests)*100, digits = 4)
+trans <- round((model2$trans$neqtls/model2$trans$ntests)*100, digits = 4)
+```
+
+```{r answer_q11, eval=TRUE, echo=FALSE}
+cat('Answer to Q11:\n The percentage of significant cis-eQTLs is ', cis, '% and the percentage of trans-eQTLs is', trans, '%\n')
+```
+
+<br><br>**Q12. How many unique SNPs are part of a *cis*eQTL? and of a *trans*-eQTL?** 
+<br>Hint: use the functions length() and levels() for this question
+```{r answer_q12_code, eval=FALSE, echo=TRUE}
+length(levels(model2$cis$eqtls$snps))
+length(levels(model2$trans$eqtls$snps))
+```
+
+```{r answer_q12, eval=TRUE, echo=FALSE}
+cat('Answer to Q12:\n There are', length(levels(model2$cis$eqtls$snps)), 'SNPs part of a cis-eQTL and', length(levels(model2$trans$eqtls$snps)),'SNPs part of a trans-eQTL \n')
+```
+
+<br><br>Run another model, where you look at both *cis*- and *trans*-eQTLs, but this time, use p-values of **5e-3** and **5e-6** respectively, and set the distance to consider a cis-eQTL 'local' to 2Mb.
+
+
+```{r model3, eval=TRUE, results='hide'}
+cisDist = 2000000
+
+output_file_name_cis = "results_cis_eQTLs_only_newp"
+output_file_name_tra = "results_trans_eQTLs_only_newp"
+
+pvOutputThreshold_cis = 5e-3
+pvOutputThreshold_tra = 5e-6
+
+model3 = Matrix_eQTL_main(
+  snps = snps, 
+  gene = gene, 
+  output_file_name     = output_file_name_tra,
+  pvOutputThreshold     = pvOutputThreshold_tra,
+  useModel = useModel, 
+  verbose = TRUE, 
+  output_file_name.cis = output_file_name_cis,
+  pvOutputThreshold.cis = pvOutputThreshold_cis,
+  snpspos = snpspos, 
+  genepos = genepos,
+  cisDist = cisDist,
+  pvalue.hist = 100,
+  min.pv.by.genesnp = FALSE,
+  noFDRsaveMemory = FALSE)
+```
+
+<br><br>**Q13. How many of the same results do you find for *cis*-eQTLs for the 1 and 2 Mb models? How about the *trans*-eQTLs? What does this tell you about the influence of the p-value threshold?** 
+<br>Hint 1: use the code below to make lists of all SNP-gene combinations found in one model, then use intersect() to compare lists. 
+<br>Hint 2: look at the number of tests performed.
+
+```{r codeHelp, eval=FALSE}
+list1 <- paste(model2$cis$eqtls$snps, model2$cis$eqtls$gene, sep = "_")
+```
+
+```{r answer_q13_code, eval=TRUE, echo=TRUE}
+list1 <- paste(model2$cis$eqtls$snps, model2$cis$eqtls$gene, sep = "_")
+list2 <- paste(model3$cis$eqtls$snps, model3$cis$eqtls$gene, sep = "_")
+list3 <- paste(model2$trans$eqtls$snps, model2$trans$eqtls$gene, sep = "_")
+list4 <- paste(model3$trans$eqtls$snps, model3$trans$eqtls$gene, sep = "_")
+
+cis_overlap <- length(intersect(list1,list2))
+trans_overlap <- length(intersect(list3,list4))
+```
+
+```{r answer_q13, eval=TRUE, echo=FALSE}
+cat('Answer to Q13:\n There are ', cis_overlap, 'cis-eQTLs present in both models, and', trans_overlap,'trans-eQTLs present in both models \n')
+cat('Many of the results do not pass the stricter p-value cut-off. Another reason that eQTLs have disappeared is because more cis tests have been performed.')
+```
+
+***
+<br><br><br>
+## Plotting
+
+MatrixEQTL has some in-built plotting functions. You can see the plots by running the following:
+
+```{r plot1, eval=TRUE}
+plot(model1)
+plot(model2)
+plot(model3)
+```
+
+<br><br>**Q14. What is the type of plot you get out?**
+```{r answer_q14, eval=TRUE, echo=FALSE}
+cat('Answer to Q14:\n A histogram of the p-values generated for both the cis- and trans-eQTLs \n')
+```
+
+<br><br>To explore the options of these plots, run your last model again, with this change:
+```{r codeHelp2, eval=FALSE}
+  pvalue.hist = 10
+```
+
+```{r model4, eval=TRUE, results='hide'}
+cisDist = 2000000
+
+pvOutputThreshold_cis = 5e-3
+pvOutputThreshold_tra = 5e-6
+
+model4 = Matrix_eQTL_main(
+  snps = snps, 
+  gene = gene, 
+  output_file_name     = output_file_name_tra,
+  pvOutputThreshold     = pvOutputThreshold_tra,
+  useModel = useModel, 
+  verbose = TRUE, 
+  output_file_name.cis = output_file_name_cis,
+  pvOutputThreshold.cis = pvOutputThreshold_cis,
+  snpspos = snpspos, 
+  genepos = genepos,
+  cisDist = cisDist,
+  pvalue.hist = 10,
+  min.pv.by.genesnp = FALSE,
+  noFDRsaveMemory = FALSE)
+```
+
+<br><br>**Q15. What changes if you plot now?**
+```{r plot4, eval=TRUE}
+plot(model4)
+```
+
+```{r answer_q15, eval=TRUE, echo=FALSE}
+cat('Answer to Q15:\n The histogram has fewer bins \n')
+```
+
+<br><br>Run the same model again, with this change:
+
+```{r codeHelp3, eval=FALSE}
+  pvalue.hist = "qqplot"
+```
+
+```{r model5, eval=TRUE, results='hide'}
+cisDist = 2000000
+
+pvOutputThreshold_cis = 5e-3
+pvOutputThreshold_tra = 5e-6
+
+model5 = Matrix_eQTL_main(
+  snps = snps, 
+  gene = gene, 
+  output_file_name     = output_file_name_tra,
+  pvOutputThreshold     = pvOutputThreshold_tra,
+  useModel = useModel, 
+  verbose = TRUE, 
+  output_file_name.cis = output_file_name_cis,
+  pvOutputThreshold.cis = pvOutputThreshold_cis,
+  snpspos = snpspos, 
+  genepos = genepos,
+  cisDist = cisDist,
+  pvalue.hist = "qqplot",
+  min.pv.by.genesnp = FALSE,
+  noFDRsaveMemory = FALSE)
+```
+
+
+<br><br>**Q16. What plot do you get now? What does this tell you about the p-value cut-off we chose?**
+```{r plot5, eval=TRUE}
+plot(model5)
+```
+
+```{r answer_q16, eval=TRUE, echo=FALSE}
+cat('Answer to Q16:\n A QQ-plot. If you look at where the pattern starts deviating from the expected line, it looks like the threshold for significant trans-eQTLs seems fair for cis-eQTLs and trans-eQTLs.\n')
+```
+
+<br><br>We will now make some eQTL boxplots, where we show the actual expression of a gene of interest, separated by genotypes. For this first example, we will use the top detected eQTL rs1799987 - ENSG00000160791.
+
+```{r codeHelp4, eval=TRUE}
+gene2 <- as.matrix(gene)
+gene2 <- as.data.frame(gene2[row.names(gene2) == "ENSG00000160791",])
+snps2 <- as.matrix(snps)
+snps2 <- as.data.frame(snps2[row.names(snps2) == "rs1799987",])
+eqtl <- merge(snps2,gene2,by="row.names")
+colnames(eqtl) <- c("sample", "genotype", "expression")
+eqtl$genotype <- as.factor(eqtl$genotype)
+```
+
+```{r boxplot, eval=TRUE}
+library(ggplot2)
+ggplot(data=eqtl, aes(x=genotype,y=expression, fill = genotype)) + 
+  geom_boxplot() +
+  geom_point() +
+  theme_bw()
+```
+
+<br><br>**Q17. Which genotype causes this gene to be upregulated?**
+<br>Hint: genotype 0 here stands for 'GG'. Using online sources like https://www.ncbi.nlm.nih.gov/projects/SNP/, you should be able to figure out what the other allele for this SNP is.
+```{r answer_q17, eval=TRUE, echo=FALSE}
+cat('Answer to Q17:\n Genotype 2.\n')
+```
+
+<br><br>Make the same plot for the fourth eQTL: rs2058660 - ENSG00000115602.
+<br>This time add whether this is a *cis*- or *trans*-eQTL in the title. 
+<br>Look up the gene name (the ENSG code) and add that to the title as well.
+<br>Hint 1.	find SNP location first (see below)
+<br>Hint 2.	Find gene location in the same way 
+<br>Hint 3.	Check positions: is this a local (cis) or distal (trans) effect?
+
+```{r codeHelp5, eval=TRUE}
+snpspos[snpspos$snpid == "rs2058660",]
+genepos[genepos$geneid == "ENSG00000115602",]
+```
+
+```{r codeHelp6, eval=TRUE}
+gene2 <- as.matrix(gene)
+gene2 <- as.data.frame(gene2[row.names(gene2) == "ENSG00000115602",])
+snps2 <- as.matrix(snps)
+snps2 <- as.data.frame(snps2[row.names(snps2) == "rs2058660",])
+eqtl <- merge(snps2,gene2,by="row.names")
+colnames(eqtl) <- c("sample", "genotype", "expression")
+eqtl$genotype <- as.factor(eqtl$genotype)
+```
+
+```{r boxplot2, eval=TRUE}
+ggplot(data=eqtl, aes(x=genotype,y=expression, fill = genotype)) + 
+  geom_boxplot() +
+  geom_point() +
+  theme_bw() + 
+  ggtitle("Cis-eQTL of rs2058660 affecting IL1RL1")
+```
+
+<br><br>Look the SNP up on GWAS catalog.
+
+<br><br>**Q18. What phenotype was this SNP first assocatiated with? What was the risk allele?**
+
+```{r answer_q18, eval=TRUE, echo=FALSE}
+cat("Answer to Q18:\n In 2010, by Franke et. al for Crohn's disease. \n The risk allele was 'G'.")
+```
+
+<br><br>**Q19a. Another cis-eQTL is rs9273493 affecting ENSG00000179344. What is the gene name for this eQTL? Can you find a link with celiac disease if you search literature online?**
+<br>**Q19b. The eQTL lies in the HLA locus: a region on the genome that seems to be involved with almost all immunological conditions. Where on the genome is this locus? Can you find some more information on it?**
+```{r answer_q19, eval=TRUE, echo=FALSE}
+cat("Answer to Q19a:\n The gene encodes HLA-DQB1. Has been linked with CeD multiple times (e.g. Megiorni et al., 2012). \nAnswer to Q19b:\n HLA lies on chr. 6p21.")
+```
+
+<br><br>**Q20. If you look up the most significant eQTL from your last *trans*-eQTL results, what gene do you find? Look at the location of the SNP and gene for this eQTL. Do you think it is a real *trans*-eQTL? Why (not)?**
+```{r answer_q20, eval=TRUE, echo=FALSE}
+cat("Answer to Q20:\n The SNP and gene both lie in / around the HLA locus. Although the distance is > 2 Mb, it seems this is still a cis-eQTL effect.")
+```
+***
+<br><br><br><br><br><br>

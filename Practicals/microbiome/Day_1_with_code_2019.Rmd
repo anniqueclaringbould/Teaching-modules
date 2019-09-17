@@ -1,0 +1,324 @@
+---
+title: "Microbiome tutorial - part 1 - answers"
+author: "Arnau Vich Vila, Annique Claringbould"
+date: "September 17, 2019"
+output: 
+  html_document:
+    toc: TRUE
+    number_sections: FALSE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br><br><br>
+
+This morning you have heard all the advantages of microbial study using the new technologies based on sequencing. The objective of the next two practice sessions is to learn some of the methods we use to investigate the characteristics of microbial communities. To do so, we will use faecal samples from a [group of volunteers][1] (controls) and a group of [patients with Crohn's disease][2] (cases) from the UMCG. 
+
+<br><br>
+
+## Module 1: From sequencing reads to taxonomies
+
+Fortunately for you, during this course you will not have to deal or isolate the DNA from any faecal samples. After sequencing, we usually remove low quality reads and remove those sequences that belong / align to the host genome (in our case: the human genome). Once we have cleaned our sequenced reads, we can proceed to identify which bugs are present in our sample. Now a days, there are many tools and approaches to do that, however there's no gold standard or a consensus database. [Here you can find a review of tools, methods, pipelines and database for analysing microbial communities][3].
+<br><br>
+
+In this course, we will use [MetaPhlAn v2.0][4]. In short, MetaPhlAn is a computational tool for profiling the composition of microbial communities (Bacteria, Archaea, Eukaryotes and Viruses) from metagenomic shotgun sequencing data with strain level resolution. MetaPhlAn 2 relies on ~1M unique specific marker genes identified from ~17,000 reference genomes. Usually, the characterisation of a full metagenomic sample can take ~1h. In order to save some time, we will run a demo. 
+<br><br>
+
+1. Check the following [input file][5]. 
+2. MetaPhlAn 2 can be run in [Galaxy][6], a web-based platform for data intensive biomedical research. We created a [special session][7] for this course.
+3. Open the [link][7] in your browser and click `Import history` in the right upper corner. In the left side of the web page you can see the different available tools, at the right side, the data that we are going to use as a demo, if you click on it you can see the details of the data, download it or edit attributes.  
+<br><br>
+
+**Q1. Find `MetaPhlAn 2` in the list of tools in our Galaxy session, read the description and choose the optimal parameters. Execute the program, take a nap and check the output. How many microbial species we are able to identify? What do the numbers represent?**
+
+Import demo data to your session<br>
+![Image of first page](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_1_galaxy.png)
+
+![Image Galaxy session](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_2_galaxy.png)
+
+The grey box indicates that the analysis is running. The process can take few minutes, you can refresh your browser to check the status <br>
+![Image Galaxy running](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_running.png)
+
+Green!!! It's done! 
+![Image Galaxy done](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_finished.png)
+<br><br><br><br>
+
+## Module 2: Exploring microbiome data
+
+Congratulations! You have survived the first module!
+
+Because we are nice people and you are our favourite students, we decided to provide you a file with 20 microbiome samples already characterized. You can download the files [here][8] and [here][9]
+
+Let's go to R and check these files: 
+
+First we will set our working directory and load some packages:
+```{r}
+	#setwd("~/Desktop/Course/")
+	library(ggplot2)
+	library(scales)
+	library(reshape2)
+	library(vegan)
+	library(foreach)
+```
+
+
+Read in the `Microbiome.txt` as `bacteria` and `Phenotypes.txt` as `phenotypes`
+```{r}
+	bacteria=read.table("./Microbiome.txt", sep="\t", header=T, row.names = 1)
+	phenotypes= read.table("./Phenotypes.txt", sep="\t", header=T, row.names = 1)	
+```
+<br><br>
+
+**Q2. Check the row names and the column names. What is the structure of each file? Report the number of columns and rows**
+
+```{r, eval=T, echo=T}
+	head(row.names(bacteria))
+	head(colnames(bacteria))
+	dim(bacteria)
+```
+<br><br>
+
+Next we want to check how many different taxonomies are present in our file (p.e , how many different kingdoms, phyla, species, etc.). A way to do that is using the row names annotation.
+```{r, eval=T, echo=T}
+	taxas <- rownames(bacteria)
+	mini <- head(taxas)
+```
+<br>	
+
+If we split the now names by `|` and we count the numbers of words in the resulting string, we can count the taxomical levels. For example, level 1 = Kingdom, level 3 = Class. Split `mini` on `|`.
+```{r, eval=T, echo=T}
+	strsplit(mini, "\\|")
+```
+<br><br><br>
+
+**Q3. How many species, strains, genus, families, etc. we can find in our data? Create a bar plot summarizing the number of different taxonomical levels present in our table** 
+
+To answer this question, start with setting all taxa to 0 (e.g. `kingdom <- 0`). Do this for `phylum`, `class`, `order`, `family`, `genus`, `species`, `strains`. Then make a for loop for every instance in `taxas`, where you add `+1` to each of the taxa if it is present. Use an `if` `else if` construction, starting with `if(length(unlist(strsplit(i, "\\|"000 == 1){kingdoms <- kingdoms + 1}`.
+```{r, eval=T, echo=T}
+kingdoms=0
+phylum=0
+class=0
+order=0
+family=0
+genus=0
+species=0
+strains=0
+
+# Count different levels. 
+for (i in taxas){
+  if (length (unlist(strsplit(i, "\\|"))) == 1){
+    kingdoms=kingdoms +1
+  }else if (length (unlist(strsplit(i, "\\|"))) == 2) {
+    phylum=phylum +1
+  } else if (length (unlist(strsplit(i, "\\|"))) == 3) {
+    class=class +1
+  } else if (length (unlist(strsplit(i, "\\|"))) == 4) {
+    order=order +1
+  } else if (length (unlist(strsplit(i, "\\|"))) == 5) {
+    family=family +1
+  } else if (length (unlist(strsplit(i, "\\|"))) == 6) {
+    genus=genus +1 
+  } else if (length (unlist(strsplit(i, "\\|"))) == 7) {
+    species=species +1
+  } else if (length (unlist(strsplit(i, "\\|"))) == 8){
+    strains=strains +1
+  }
+}
+```
+<br><br>
+
+Then put the results in a table like this:
+```{r, eval=T, echo=T}
+#Put results in a table
+summary_taxa=as.data.frame(c(kingdoms,phylum,class,order,family,genus,species,strains), row.names = c("1_kingdoms","2_phylum","3_class","4_order","5_family","6_genus","7_species","8_strains"))
+colnames(summary_taxa)="counts"
+```
+<br><br>
+
+And make a barplot of `summary_taxa` using `aes(rownames(summary_taxa), counts)`
+```{r, eval=T, echo=T}
+#Plot counts
+ggplot(summary_taxa, aes(rownames(summary_taxa),counts)) + geom_bar(stat = "identity") + theme_classic()
+```
+<br><br><br>
+
+You may also be interested in the mean relative abundance of a microorganism, let's say, how abundant is *Escherichia Coli* in our gut. For that we can simply calculate the mean. In addition we can also calculate only the mean in those samples that the bacteria is present (thus, excluding zeros)
+<br><br><br>
+
+**Q4. How many taxonomies are absent in all the samples?**
+
+To answer this question, let's first take a look at the mean values for the first taxa (Kingdom Archaea) and the number of non-0 values. You will need to create `transposed_bacteria` (transposed version of `bacteria`), access the first observation, and use `mean()` and `sum()`. 
+```{r, eval=T, echo=T}
+transposed_bacteria=as.data.frame(t(bacteria))
+
+##Let's calculate the mean values per the first taxa, in this case, Kingdom Archaea
+mean(transposed_bacteria[,1])
+
+## Check the number of non 0's values
+sum(transposed_bacteria[,1]!=0)
+```
+<br>
+
+Now, create a summary table containing for each bacterium with mean, mean without zero values, and the percentage of samples where it is present. Identify the top 5 most and top 5 least abundant bacteria.
+```{r, eval=T, echo=T}
+## Which are the top 5 more abundant taxa and the top 5 least abundant taxa
+my_results=matrix(ncol = 5, nrow=ncol(transposed_bacteria)) 
+taxonomy_abundance <- function(taxonomy_table) {
+  ##Function to calculate mean excluding 0 values
+  nzmean <- function(a){
+    mean(a[a!=0])
+  }
+  ##Function to calculate number of 0
+  zsum <- function(a){
+    sum(a==0)
+  }
+  ##Function to calculate number of non-0
+  nsum <- function(a){
+    sum(a!=0)
+  }
+  ## Loop for each column (taxonomy) in the taxonomy table
+  for (i in 1:ncol(taxonomy_table)) {
+    #Calculate mean for each column
+    aa = mean(taxonomy_table[,i])
+    #Calculate number of non-zeros (individuals)
+    bb = nsum(taxonomy_table[,i])
+    #Calculate mean without taking into account the 0
+    cc = nzmean(taxonomy_table[,i])
+    #Calculate number of zeros 
+    dd = zsum(taxonomy_table[,i])
+    ee= (dd/(dd+bb))*100
+    my_results[i,1] = aa
+    my_results[i,2] = bb
+    my_results[i,3] = cc
+    my_results[i,4] = dd
+    my_results[i,5] = ee
+  }
+  return(my_results)
+}
+
+my_results=as.data.frame(taxonomy_abundance(transposed_bacteria))
+```
+<br><br>
+
+Save the column names of `transposed_bacteria` as the row names for `my_results`. Give `my_results` descriptive column names based on what you've calculated above in `aa`, `bb`, etc. Make a bar plot of the percentage missing (`perc_missing`).
+```{r, eval=T, echo=T}
+
+rownames(my_results) = colnames(transposed_bacteria)
+colnames(my_results) = c("Mean","N_of_non-0", "Non-0_Mean", "N_of_0", "perc_missing") 
+
+ggplot(my_results, aes(perc_missing)) + geom_bar() +theme_classic()
+
+```
+<br><br>
+
+We can use the previous information to remove those microbes that are absent in most of the samples. Let's set a threshold of presence in at least 10% of the samples. Call the new matrix `my_results_filtered`. Save the rownames of the bacteria to keep as `list_to_keep` and use that to make the new matrix `bacteria_2_keep` without the missing bacteria. Save `taxas` including only the bacteria that remain.
+
+```{r, eval=T, echo=T}
+my_results_filtered=my_results[my_results$perc_missing<90,]
+list_to_keep=as.vector(row.names(my_results_filtered))
+bacteria_2_keep=bacteria[list_to_keep,]
+taxas = rownames(bacteria_2_keep)
+```
+<br><br>
+
+Since the taxonomy is a hierarchical structure, we may want to perform our analyses only in one specific taxonomical level, e.g. species: 
+```{r, eval=T, echo=T}
+list_species=list()
+for (i in taxas){
+  if (length (unlist(strsplit(i, "\\|"))) == 7){
+    list_species=c( list_species,i)
+  }
+}
+species_table=bacteria_2_keep[unlist(list_species), ]
+```
+<br><br><br>
+
+**Q5. Create a dataframe containing only phylum level. How many bacteria are in here? How many phyla?**
+
+```{r, eval=T, echo=T}
+
+list_phylum=list()
+for (i in taxas){
+  if (length (unlist(strsplit(i, "\\|"))) == 2){
+    list_phylum=c( list_phylum,i)
+  }
+}
+phyla_table=bacteria_2_keep[unlist(list_phylum), ]
+dim(phyla_table)
+```
+<br><br>
+
+In the phenotype data frame you can see different information per each sample: age, sex (1:Male, 2:Female), number of sequencing reads, BMI etc. In order to perform a case-control study, it is important to check whether there are any difference between groups in other phenotypes that can have an influence on the microbiome composition.
+<br><br>
+
+**Q6. Are there differences between healthy controls and IBD participants with respect to the distributions of phenotypes?**
+
+We can visualise the differences between groups in a stacked bar plot. Merge taxanomy table created in **Q5** with the phenotype table using `merge`. Don't forget to transpose `phyla`.
+
+```{r, eval = T, echo = T}
+phyla_pheno=merge(phenotypes, t(phyla_table), by="row.names")
+```
+
+**Q6. Create a stacked bar plot showing the abundance of different phyla comparing different phenotypes (sex, smoking, etc.) and cases vs controls. Do you see any differences?**
+
+```{r, eval=T, echo=T}
+phyla_pheno$Sex=NULL
+phyla_pheno$PFReads=NULL
+phyla_pheno$Age=NULL
+phyla_pheno$BMI=NULL
+phyla_pheno$Smoking=NULL
+phyla_pheno$PPI=NULL
+melt_phyla=melt(phyla_pheno)
+ggplot(melt_phyla, aes(DiagnosisCurrent, as.numeric (value))) + geom_bar (aes(fill = variable), stat = "identity") + theme_classic() + xlab("Group") + ylab("relative_abundance")  + scale_y_continuous(labels = percent_format())
+```
+
+This plot give us an idea on differences in composition at higher taxonomical levels. However we can also look at interesting bacterial species. 
+
+**Q8. Create boxplots comparing IBD vs Healthy controls of the following species: *Methanobrevibacter smithii*, *Faecalibacterium prausnitzii*, *Escherichia coli* and *Bacteroides vulgatus*. What we can conclude?** 
+Below is example code for one of the species.
+
+```{r, eval=T, echo=T}
+pheno_and_sp=merge(phenotypes, species_table, by="row.names")
+rownames(pheno_and_sp)=pheno_and_sp$Row.names
+pheno_and_sp$Row.names=NULL
+ggplot(pheno_and_sp, 
+       aes(DiagnosisCurrent,pheno_and_sp$`k__Bacteria|p__Firmicutes|c__Clostridia|o__Clostridiales|f__Lachnospiraceae|g__Roseburia|s__Roseburia_intestinalis`, fill=DiagnosisCurrent)) +
+  geom_boxplot(alpha=0.7) + 
+  theme_bw() + 
+  geom_jitter() + 
+  scale_y_continuous(name="Roseburia instestinalis")
+```
+
+```{r, eval=T, echo=T}
+ggplot(pheno_and_sp, 
+       aes(DiagnosisCurrent,pheno_and_sp$`k__Bacteria|p__Proteobacteria|c__Gammaproteobacteria|o__Enterobacteriales|f__Enterobacteriaceae|g__Escherichia|s__Escherichia_coli`, fill=DiagnosisCurrent)) +
+  geom_boxplot(alpha=0.7) + 
+  theme_bw() + 
+  geom_jitter() + 
+  scale_y_continuous(name="E.coli")
+
+ggplot(pheno_and_sp, aes(DiagnosisCurrent,pheno_and_sp$`k__Bacteria|p__Firmicutes|c__Clostridia|o__Clostridiales|f__Ruminococcaceae|g__Faecalibacterium|s__Faecalibacterium_prausnitzii`, fill=DiagnosisCurrent)) +
+  geom_boxplot(alpha=0.7) + 
+  theme_bw() + 
+  geom_jitter() + 
+  scale_y_continuous(name="F.Prausnitzii")
+
+```
+
+
+
+
+
+![Image example rel.abundance species](https://github.com/ArnauVich/Courses/blob/master/images/Rplot.png)
+
+[1]: https://www.lifelines.nl
+[2]: https://en.wikipedia.org/wiki/Crohn%27s_disease
+[3]: https://github.com/ArnauVich/Courses/blob/master/images/Metagenomics%20-%20Tools%20Methods%20and%20Madness.pdf
+[4]: http://huttenhower.sph.harvard.edu/metaphlan2
+[5]: https://bitbucket.org/biobakery/humann2/raw/eed75fc7a0d8fe99af8de29ecccea979fc737157/humann2/tests/data/demo.fastq
+[6]: https://usegalaxy.org
+[7]: http://huttenhower.sph.harvard.edu/galaxy/u/avv/h/coursemetagenomics
+[8]: https://github.com/ArnauVich/Courses/blob/master/Microbiome.txt 
+[9]: https://github.com/ArnauVich/Courses/blob/master/Phenotypes.txt
