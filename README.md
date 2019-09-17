@@ -15,9 +15,6 @@ Teaching modules given by the UMCG department of Genetics
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
 	* [Genotype files](Practicals/GWAS/celiac_gwas)
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
-* [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
-	* [Genotype files](Practicals/GWAS/celiac_gwas)
-	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 
 * [gene expression]()	
 
@@ -29,10 +26,11 @@ Teaching modules given by the UMCG department of Genetics
 	* [eQTL answers](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_answers_adjusted27082018.html)
 
 * [Microbiome part 1](Practicals/microbiome/Day_1_2019.html)
-* [Microbiome part 2 (with answers)](Practicals/microbiome/Day_2_with_code_2019.html)
+* [Microbiome part 2 (with answers)](Practicals/microbiome/Day_2_with_code.html)
 	* [FASTQ demo](Practicals/microbiome/demo.fastq.txt)
 	* [phenotypes](Practicals/microbiome/Phenotypes.txt)
 	* [microbiome](Practicals/microbiome/Microbiome.txt)
+
 
 * [Single-cell](Practicals/single-cell-RNA-seq)
 
