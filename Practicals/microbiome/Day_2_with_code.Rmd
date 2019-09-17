@@ -1,3 +1,13 @@
+---
+title: "Microbiome tutorial - part 2 - answers"
+author: "Arnau Vich Vila, Annique Claringbould"
+date: "September 17, 2019"
+output: 
+  html_document:
+    toc: TRUE
+    number_sections: FALSE
+---
+
 When we say "the analysis", we usually mean "the statistics". The
 visualization can tell us about the trends, but nothing about their
 relevance on a level of the general population. Ok, let's start.
