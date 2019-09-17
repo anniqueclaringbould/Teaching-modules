@@ -30,9 +30,9 @@ Teaching modules given by the UMCG department of Genetics
 
 * [Microbiome part 1](Practicals/microbiome/Day_1_2019.html)
 * [Microbiome part 2 (with answers)](Practicals/microbiome/Day_2_with_code_2019.html)
-	*[FASTQ demo](Practicals/microbiome/demo.fastq.txt)
-	*[phenotypes](Practicals/microbiome/Phenotypes.txt)
-	*[microbiome](Practicals/microbiome/Microbiome.txt)
+	* [FASTQ demo](Practicals/microbiome/demo.fastq.txt)
+	* [phenotypes](Practicals/microbiome/Phenotypes.txt)
+	* [microbiome](Practicals/microbiome/Microbiome.txt)
 
 * [Single-cell](Practicals/single-cell-RNA-seq)
 
