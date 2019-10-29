@@ -10,11 +10,12 @@ Teaching modules given by the UMCG department of Genetics
 	* [R course - myfirstfile](R-course/data/myfirstfile.txt)
 
 <!--
-	*[R course - day 1 answers](R-course/R_day1_intro_answers.html)
+	* [R course - day 1 answers](R-course/R_day1_intro_answers.html)
 * [R course - day 2](R-course/R_day2_stats.html)
-	*[R course - day 2 answers](R-course/R_day2_stats_answers.html)
+	* [R course - expression data](R-course/data/BigData_backup_GM12878-IL21.csv)
+	* [R course - day 2 answers](R-course/R_day2_stats_answers.html)
 * [R course - day 3](R-course/R_day3_plotting.html)
-	*[R course - day 2 answers](R-course/R_day3_plotting_answers.html)
+	* [R course - day 2 answers](R-course/R_day3_plotting_answers.html)
 -->
 
 ### Practical workshops about specific topics
