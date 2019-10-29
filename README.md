@@ -4,7 +4,10 @@ Teaching modules given by the UMCG department of Genetics
 
 ### Introduction to R
 * [R course - day 1](R-course/R_day1_intro.html)
-	* [R course - data](R-course/data)
+	* [R course - height data](R-course/data/height.Rdata)
+	* [R course - weight data](R-course/data/weight.Rdata)
+	* [R course - new data](R-course/data/newdata.Rdata)
+	* [R course - myfirstfile](R-course/data/myfirstfile.txt)
 
 <!--
 	*[R course - day 1 answers](R-course/R_day1_intro_answers.html)
@@ -16,7 +19,9 @@ Teaching modules given by the UMCG department of Genetics
 
 ### Practical workshops about specific topics
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
-	* [Genotype files](Practicals/GWAS/celiac_gwas)
+	* [Genotype files - .bed](Practicals/GWAS/celiac_gwas/celiac_gwas.bed)
+	* [Genotype files - .bim](Practicals/GWAS/celiac_gwas/celiac_gwas.bim)
+	* [Genotype files - .fam](Practicals/GWAS/celiac_gwas/celiac_gwas.fam)
 
 <!--
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
