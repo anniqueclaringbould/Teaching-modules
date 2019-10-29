@@ -4,13 +4,20 @@ Teaching modules given by the UMCG department of Genetics
 
 ### Introduction to R
 * [R course - day 1](R-course/R_day1_intro.html)
+	* [R course - data](R-course/data)
+
+<!--
+	*[R course - day 1 answers](R-course/R_day1_intro_answers.html)
 * [R course - day 2](R-course/R_day2_stats.html)
+	*[R course - day 2 answers](R-course/R_day2_stats_answers.html)
 * [R course - day 3](R-course/R_day3_plotting.html)
-	* [Answers](R-course/plottingAnswers.html)
+	*[R course - day 2 answers](R-course/R_day3_plotting_answers.html)
+-->
 
 ### Practical workshops about specific topics
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
 	* [Genotype files](Practicals/GWAS/celiac_gwas)
+
 <!--
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 -->
