@@ -1,0 +1,4 @@
+Sample	Gene_first	Gene_second	Gene_third
+ID1	10_2	12_2	17_0
+ID2	2_1	0_0	13_4
+ID3	28_4	9_5	23_0

@@ -261,7 +261,7 @@ We can visualise the differences between groups in a stacked bar plot. Merge tax
 phyla_pheno=merge(phenotypes, t(phyla_table), by="row.names")
 ```
 
-**Q6. Create a stacked bar plot showing the abundance of different phyla comparing different phenotypes (sex, smoking, etc.) and cases vs controls. Do you see any differences?**
+**Q7. Create a stacked bar plot showing the abundance of different phyla comparing different phenotypes (sex, smoking, etc.) and cases vs controls. Do you see any differences?**
 
 ```{r, eval=T, echo=T}
 phyla_pheno$Sex=NULL

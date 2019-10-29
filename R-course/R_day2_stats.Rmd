@@ -1,0 +1,764 @@
+---
+title: "R course day 2: Statistics"
+author: "Niek de Klein, Annique Claringbould"
+output: 
+  html_document:
+    toc: true # table of content true
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    highlight: tango  # specifies the syntax highlighting style
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+<br><br><br>
+
+# Introduction
+
+Today, we will continue the R course with some basic statistics. We will use two datasets to go through a number of exercises and questions today.<br>
+First we will use a dataset of flower petal measurements called [iris](https://en.wikipedia.org/wiki/Iris_flower_data_set), this dataset is inherent to R and meant for practice. You do not need to load or import the data, you can get started immediately. You can find many examples of people using this dataset online, so it is useful if you have an idea of what it looks like.<br>
+The next dataset is gene expression data from an actual experiment on a B cell line derived from publicly available sample called 'GM12878'.<br>
+
+We will explore these datasets and apply some of the statistics you have learned about previously. 
+<br><br>
+
+## Exploring the data
+The following commands are useful for exploring data:
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+head() #prints first 10 rows of a dataset
+dim() #gives the dimensions (rows and columns) of a dataset
+colnames() #prints the column names of a dataset
+rownames() #prints the row names of a dataset
+View() #opens the dataset in the top window of RStudio
+str() #prints an overview of the 'structure' of the data, e.g. the column names, their data types
+summary() #gives a summary of each column, specific output depends on data types in each column
+table() #gives a count table about a particular variable
+```
+<br>
+
+**Q1**: As **iris** is a default dataset that is included with R, you can start exploring the data without loading it first:
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
+head(iris)
+```
+
+* What measurements does **iris** contain?
+* What information does each of the columns describe? *Hint* Find more information about [sepal](https://en.wikipedia.org/wiki/Sepal) and [petal](https://en.wikipedia.org/wiki/Petal)
+* What is the unit of measurement? *Hint* Here is some basic information about the dataset: [iris](https://en.wikipedia.org/wiki/Iris_flower_data_set)
+* How many flower measurements are recoreded?
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 1
+#Code
+head(iris)
+dim(iris)
+
+#Answer
+#Length and width of 'Sepal' (green leaves just underneath flower), of 'Petal' (flower leaves) and the species of Iris in cm
+#There are 150 observations
+```
+<br>
+
+**Q2**: What species of iris are tested? And how many observations are there in each species? Access the relevant column using `iris$Species` and use one of the commands mentioned in the overview above.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 2
+#Code
+table(iris$Species)
+
+#Answer
+#There are 50 observations for each of setosa, versicolor and virginica
+```
+<br><br>
+
+# Differences between 2 groups
+We would like to know if the Sepal length of *Iris virginica* is longer than the petal length of *Iris versicolor*. When asking these questions usually it refers to the averages of the groups. So first, look at the mean of both groups:
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
+mean(iris[iris$Species == 'virginica',]$Petal.Length)
+```
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
+mean(iris[iris$Species == 'versicolor',]$Petal.Length)
+```
+<br>
+
+**Q3**: What does this part of the code above do: `iris[iris$Species == 'virginica',]`?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 3
+#Code
+iris[iris$Species == 'virginica',]
+
+#Answer
+#It selects only the flowers of species 'virginica' from the dataframe
+```
+<br>
+
+Save the differences between the two means in variable `diff`:
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+# Save the difference in the *variable* diff
+diff <- mean(iris[iris$Species == 'virginica',]$Petal.Length) - mean(iris[iris$Species == 'versicolor',]$Petal.Length)
+```
+<br>
+
+**Q4**: What is the value of `diff`? Why would we need P-values and confidence intervals if we can already see that there is a difference in petal length?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 4
+#Code
+diff <- mean(iris[iris$Species == 'virginica',]$Petal.Length) - mean(iris[iris$Species == 'versicolor',]$Petal.Length)
+diff
+
+#Answer
+#You want to know if this difference could have occurred by chance (that is, if you had picked 50 different versicolor flowers, would you have gotten the same result?)
+```
+<br><br>
+
+## Parametric: two-sample t-test
+
+We have already used `iris[iris$Species == 'virginica',]$Petal.length` a few times, but these long statements are not very readable. Save the petal lengths for *virginica* in a variable called `virg_pl`:
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+virg_pl <- iris[iris$Species == 'virginica',]$Petal.Length
+```
+<br>
+Do the same for *versicolor* (`vers_pl`) and *setosa* (`set_pl`).
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+virg_pl <- iris[iris$Species == 'virginica',]$Petal.Length
+vers_pl <- iris[iris$Species == 'versicolor',]$Petal.Length
+set_pl <- iris[iris$Species == 'setosa',]$Petal.Length
+```
+<br>
+
+You may have covered how to manually calculate the P-value from a t-test using the mean and standard deviation in your program, but here we show how to simply do it in R using the function `t.test()`.<br>
+
+A t-test is a parametric test, and therefore is assumes that the length of the petals is approximatly normally distributed for the population. To assess this assumption, it would be good to plot the data and have a look at it. We will go into that tomorrow.<br>
+
+**Q5**: Run a t-test to compare the petal length between virginica and versicolor:
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+t.test(virg_pl, vers_pl)
+```
+What is our null hypothesis, and given our t-test result, can we support or reject it?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 5
+#Code
+t.test(virg_pl, vers_pl)
+
+#Answer
+#The assumption is that both groups are sampled from normal distributions with the same variance. 
+#The null hypothesis is that the two means are equal (no difference in length in petal length between the two species).
+#Because p-value < 0.05 we reject the null hypothesis.
+```
+<br>
+
+You can save the result of the t-test by assigning it to a variable using `variable <- t.test()`, like we did a number of times in yesterdays practical.
+<br> 
+
+**Q6**:
+
+* Run a t-test to compare the petal length between *virginica* and *setosa*
+* Assign the result to `t_test_virg_set`
+* Use `t_test_virg_set$p.value` to find the exact p-value of this test
+* Use `t_test_virg_set$estimate` to view the means and `t_test_virg_set$conf.int` to view the 95% confidence interval values<br>
+Can we reject the null hypothesis of this test? Is the difference in means larger when comparing *virginica* with *versicolor* or with *setosa*?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 6
+#Code
+t_test_virg_set <- t.test(virg_pl, set_pl)
+t_test_virg_set$p.value
+
+t_test_virg_vers <- t.test(virg_pl, vers_pl)
+
+t_test_virg_vers$estimate
+t_test_virg_set$estimate
+
+t_test_virg_vers$conf.int
+t_test_virg_set$conf.int
+
+#Answer
+#The null hypothesis is that the two means are equal (no difference in length in petal length between the two species).
+#Because p-value < 0.05 we reject the null hypothesis.
+#The difference in means is much larger when comparing virginica to setosa
+```
+<br><br>
+
+## Non-paramteric: Wilcoxon test
+
+We have seen how to perform a t-test to compare if the mean of two groups is the same. However, we assumed that our data was normally distributed. Large outliers can heavily influence the sample mean and standard deviation, which would influence the t-test result. But what if during recording of the petal lengths the wrong values had been added? 
+<br><br>
+Let's change three values to simulate such outliers:
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
+vers_pl[1] <- 15
+vers_pl[2] <- 17
+vers_pl[3] <- 14
+```
+<br>
+Now run the t-test again:
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
+t.test(virg_pl,vers_pl)
+```
+The t-test is no longer significant.
+<br>
+
+**Q7**: 
+
+* Run the wilcoxon test on the same data (`wilcox.test`, type `?wilcox.test` to see examples of how to use it)
+* Is the p-value lower or higher? (type `?wilcox.test` for examples how to use it)
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 7
+#Code
+wilcox.test(virg_pl, vers_pl)
+
+#Answer
+#The p-value is highly significant and much lower than the p-value from the t-test. It appears this test deals better with outliers.
+```
+<br>
+
+The Wilcoxon test merges the data together, ranks each point from lowest to highest values, separates the ranks back to the two groups, and using the sum or average rank calculates the test-statistics. 
+
+**Q8**: 
+
+* Make a plot of the real values using the code below
+* Read the stripchart help page
+* When would you typically use a stripchart?
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+stripchart(list(virg_pl, vers_pl),
+           vertical=TRUE,
+           ylab="Observations",
+           pch=21,
+           bg=1)
+```
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 8
+#Code
+stripchart(list(virg_pl, vers_pl),
+           vertical=TRUE,
+           ylab="Observations",
+           pch=21,
+           bg=1)
+#Answer
+#The plots are used to show the differences between two groups when the sample size is small
+
+```
+<br>
+
+As you can see in your plot, there is a big gap between the outlier points that we just introduced and the normal points. 
+<br>
+
+**Q9**: 
+
+* Make two plots of the real and ranked values using the code below
+* Why is the wilcoxon test better for data with outliers?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+# par() is a function that allows multiple plots to be combined in one figure
+# 1 = the number of rows, 2 = the number of columns
+par(mfrow=c(1,2))
+
+xrank <- rank(c(virg_pl,vers_pl))[seq(along=virg_pl)]
+yrank <- rank(c(virg_pl,vers_pl))[-seq(along=vers_pl)]
+# plot the previous plot for comparison
+stripchart(list(virg_pl, vers_pl),
+           vertical=TRUE,
+           ylab="Observations",
+           pch=21,
+           bg=1)
+abline(h=0)
+stripchart(list(xrank,yrank),
+           vertical=TRUE,
+           ylab="Ranks",
+           pch=21,bg=1,
+           cex=1.25)
+
+```
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 9
+#Code
+par(mfrow=c(1,2))
+
+xrank <- rank(c(virg_pl,vers_pl))[seq(along=virg_pl)]
+yrank <- rank(c(virg_pl,vers_pl))[-seq(along=vers_pl)]
+# plot the previous plot for comparison
+stripchart(list(virg_pl, vers_pl),
+           vertical=TRUE,
+           ylab="Observations",
+           pch=21,
+           bg=1)
+abline(h=0)
+stripchart(list(xrank,yrank),
+           vertical=TRUE,
+           ylab="Ranks",
+           pch=21,bg=1,
+           cex=1.25)
+
+#Answer
+#Because it makes the gap between outliers and the other data smaller, ensuring that those points are not the most important in calculating the differences between the two groups.
+```
+<br><br>
+
+# Differences between more than 2 groups
+Sometimes, we want to know the difference between not just 2 groups, but between more than 2 groups. For example, in the **iris** data, there are 3 species of flower that we can investigate. Of course we can run a t-test or Wilcoxon test for each of the combinations, but we can also use an analysis of variance (ANOVA) or the non-parametric Krukal-Wallis test.
+<br><br>
+
+## Parametric: ANOVA
+If you want to compare the difference of mean values among multiple groups, you can use the ANOVA test. We want to examine whether the mean value of `Sepal.Length` differs among the different species of **iris**. We use the function `aov()` and we assign the result to `model1`. <br>
+The tilde (`~`) must be read as the phrase 'is modeled as a function of'. In this example, we would say: The length of iris sepals is modeled as a function of the iris species.
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+model1 <- aov(Sepal.Length~Species, data = iris)
+```
+<br>
+
+In general, the basic notation for a linear model or function notation in R is:
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+response_variable ~ explanatory_variables
+```
+<br>
+
+**Q10**:
+
+* Use the function `summary()` to have a look at `model1`
+* The p-value is in the column `Pr(>F)`
+* Is the p-value significant for this test?
+* What is the significance code for this test, and what does that mean?
+* The degrees of freedom are in the column `Df`
+* How many degrees of freedom are there for the `Species`?
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+#Question 10
+#Code
+summary(model)
+
+#Answer
+#The p-value is highly signifciant: <2e-16 
+#The significance code is ***, which indicates a level of below 0.001
+#There are 2 degrees of freedom, that makes sense because there are 3 species (df = variables-1)
+```
+<br><br>
+
+## Non-parametric: Kruskal-Wallis test
+The same test without the assumption of normality (i.e. non-parametric test) is called the Kruskal-Wallis test.
+<br>
+
+**Q11**:
+
+* Use the function `kruskal.test()` to calculate the differences between the **length** of the sepals across the three species
+* Save the output in `model2`
+* Use the function `kruskal.test()` to calculate the differences between the **width** of the sepals across the three species
+* Save the output in `model3`
+* Is there a difference in significance between `model1` and `model2`?
+* What is the p-value for `model3`?
+* What can you conclude about the relationship between sepal length and width and iris species?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 11
+#Code
+model2 <- kruskal.test(Sepal.Length~Species, data = iris)
+model3 <- kruskal.test(Sepal.Width~Species, data = iris)
+
+summary(model1)[[1]][["Pr(>F)"]]
+model2$p.value
+
+model3$p.value
+
+
+#Answer
+#P-values of model1 and model2 are both highly significant, model1 a bit more so
+#model3 p-value is 1.569282e-14, also significant but less so than the sepal length model
+#Both length and width of sepal is dependent on the species of iris
+
+```
+<br><br>
+
+# Differences between paired samples
+In other instances, you might be interested to understand the differences between samples that are linked (or 'paired') to one another. For example, if you have an experiment with two measurements before and after a treatment from the same sample. Because you are looking at data from the same individual, the measurements before and after will be 'paired'.
+<br><br>
+
+## Parametric: paired t-test
+We will use gene expression data for this part of the tutorial. The data describes an experiment where cells from a B cell line (from one individual, GM12878) are stimulated with the cytokine IL21. The same cells are sequenced before treatment, after 3 hours with cytokine stimulation and after 3 hours without cytokine stimulation.
+<br>
+
+**Q12**:
+
+* Copy the following commands to import and examine the data
+* Fill in the missing parts:
+* The dataset contains gene expression for the sample GM12878 on **?** genes
+* There are **?** columns (experiments)
+* The time points used in this experiment are t=0 and t=180: **TRUE/FALSE**
+* The experiment has been done *in triplo*: **TRUE/FALSE**
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+#load the necessary packages
+library(stringr)
+
+# read in the table containing the read counts of all samples that we will use for the analysis
+exp <- read.csv("DIRECTORY WHERE YOU SAVED THE DATA/BigData_backup_GM12878-IL21.csv", header=TRUE)
+# to continue with the table, we need to create rownames of the column named "probes" in which the gene_IDs are located
+rownames(exp) <- exp$X
+exp <- exp[,-1]
+head(exp)
+dim(exp)
+```
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+#Question 12
+#Code
+library(stringr)
+exp <- read.csv("/Users/anniqueclaringbould/Downloads/Data/BigData_backup_GM12878-IL21.csv", header=TRUE)
+rownames(exp) <- exp$X
+exp <- exp[,-1]
+
+#Answer
+# The dataset contains gene expression for the sample GM12878 on 39666 genes
+# There are 6 columns (experiments)
+# The time points used in this experiment are t=0 and t=180: TRUE
+# The experiment has been done *in triplo*: FALSE --> it has been done in duplo (sample A and B)
+```
+<br>
+
+**Q13** Using this dataset, we can look for specific and a-specific changes in gene expression as a consequence of stimulation by comparing the following data points: <br>
+
+1. Unstimulated & 180 min without cytokine
+2. 180 min without cytokine & 180 min with cytokine
+3. Unstimulated & 180 min with cytokine
+
+<br>Which comparison will be most reliable and informative if we want to know the effects of IL21 stimulation?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 13
+#Answer
+# The most informative will be comparison 2) because it will show the specific effects of the cytokine stimulation without adding the effect of preparing the sample and letting it sit for 3 hours. Comparison 1) will indicate how much gene expression changes due to the experimental protocol without the actual stimulation. Comparison 3) does not take this into account.
+```
+<br>
+
+**Q14** Run a paired t-test to see if there is a significant difference between the stimulated and unstimulated gene expression after 3 hours in sample A:
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+t.test(exp$GM12878_A_t180unstim, exp$GM12878_A_t180, paired = TRUE)
+```
+Now test the difference between unstimulated at the start and unstimulated after 3 hours. Are the paired t-tests significant? What is the biggest difference?
+
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 14
+#Code
+t.test(exp$GM12878_A_t180unstim, exp$GM12878_A_t180, paired = TRUE)
+t.test(exp$GM12878_A_t0unstim, exp$GM12878_A_t180unstim, paired = TRUE)
+
+#Answer
+#Both paired t-tests are significant
+#The difference between unstimulated at t=0 and at t=180 is much larger (~60.9) than between stimulated and unstimulated at t=180 (~-15)
+```
+<br><br>
+
+## Non-parametric: Wilcoxon signed rank test
+The non-parametric version of the paired t-test is called the Wilcoxon signed rank test. 
+
+**Q15**:
+
+* Run a Wilcoxon signed rank test using `wilcox.test()` on `GM12878_A_t0unstim` and `GM12878_A_t180unstim`
+* What happens if you do **not** tell R that the sample information is paired?
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+#Question 15
+#Code
+wilcox.test(exp$GM12878_B_t0unstim, exp$GM12878_B_t180unstim, paired = TRUE)
+wilcox.test(exp$GM12878_B_t0unstim, exp$GM12878_B_t180unstim, paired = FALSE)
+
+#Answer
+#The difference is significant if you tell R it is paired, not if you do not give that information
+```
+<br><br>
+
+# Association between variables
+
+## Correlation 
+Info in Word R-course
+
+We hyopthesize that the wider a plants petals are, the longer they get, and would like to test this. Often plotting the two variables is already enough to see if they correlate. 
+
+___Q10. Make a scatterplot between Sepal length and Sepal width___
+
+```{r scatterplot sepal length and width, echo=FALSE, fig.show='hide'}
+plot(iris$Sepal.Length, iris$Sepal.Width)
+```
+There is a slight correlation between the Sepal length and Sepal width, and can find the correlation coefficient with
+
+```{r correlate sepal length and width}
+cor(iris$Sepal.Length, iris$Sepal.Width)
+```
+
+and indeed there is some correlation. However, The correlation is probably a lot stronger when we limit it do one species.
+
+___Q11. What correlation coefficient do you get if you correlate Sepal length of _versicolor_ with the Petal length of _versicolor_? Also make a scatterplot.___
+
+```{r correlate and plot petal length and width, echo=FALSE, fig.show='hide', eval=F}
+cor(iris$Petal.Length, iris$Petal.Width)
+plot(iris$Petal.Length,iris$Petal.Width)
+```
+
+___Q12. What correlation coefficient do you get if you correlate Petal width of _versicolor_ with the Petal length of versicolor?___
+
+```{r correlate and plot petal length and width versicolor, echo=FALSE, results='hide'}
+cor(iris[iris$Species=='versicolor',]$Petal.Length, iris[iris$Species=='versicolor',]$Petal.Width)
+```
+
+Instead of doing it two columns at a time, it is also possible to give a whole ```dataframe``` input for the correlation function. 
+
+___Q13. Get the correlation coefficient for all the columns by using cor() on the iris dataframe (don't forget to only select the columns with numeric values).___ 
+
+
+```{r correlate full iris data,echo=F, results='hide'}
+cor(iris[1:4])
+```
+
+___Q14. In the same way, plot the scatterplot for the 4 characteristics (see below for how the result should look)___. 
+
+___Q15. Add colour with___ ```col=iris$Species```
+
+```{r plot full iris data,echo=F}
+plot(iris[1:4], col=iris$Species)
+```
+
+
+### Pearson correlation
+### Spearman rank correlation
+
+## Linear models
+Now that we have seen that the petal width a petal length is strongly correlated we can use regression analysis to predict values that we have no measured. Regression finds a relationship between the predictor variable (measured in experiments) and response variable (derived from predictor variable). If there is a linear relationship between these two variables they can be represented by a line. The regression formula is
+
+```y = ax + b```
+
+where y is the response variable, x is the predictor variable, and a and b are the coefficients. We want to predict petal length using the petal width. 
+
+You can simply do a linerar regression with
+
+```{r linear model,results="hide"}
+lm(Petal.Length ~ Petal.Width, data=iris)
+```
+
+___Q18. Using the results from ```lm```, write down the mathematical equation to calculate petal length given the petal width.___
+
+<!-- 
+Petal Length = 2.230 * Petal Width + 1.084
+-->
+Now you can predict the petal length using the petal width using ```predict.lm()```. 
+
+___Q19. What petal length would a plant with petal width of 4 have?___ Hint: You have to give a measured value in a dataframe with the same column name as in the linear model, so use ```measured <- data.frame(Petal.Width=4)``` as your measured value.
+
+```{r predict value, hidden=TRUE, results='hide'}
+relation <- lm(Petal.Length ~ Petal.Width, data=iris)
+measured <- data.frame(Petal.Width=4)
+predict_value <- predict.lm(relation,measured)
+print(predict_value)
+```
+Finally, we plot the regression line
+
+```{r regression plot}
+# Plot the chart.
+relation <- lm(Petal.Length ~ Petal.Width, data=iris)
+plot(iris$Petal.Width,iris$Petal.Length,
+  abline(relation))
+```
+
+___Q20. Add in the point that you predicted with petal width of 4___ Hint: You can add extra points by using ```points()```. 
+
+```{r, fig.show='hide'}
+# Plot the chart. xlim(c(0,4)) limits the x-axis from value 0 to value 4
+# and ylim(0,11) limits the y-axis from 0 to 11. This is because the point
+# falls outside of the normal range of the plot.
+plot(iris$Petal.Width,iris$Petal.Length,
+  abline(relation), 
+  xlim=c(0,4), 
+  ylim=c(0,11))
+# Add the point using points() after the plot()
+```
+
+
+```{r, echo=F, eval=F}
+points(4,predict_value, col="red")
+```
+
+Try the same thing but without ```xlim``` and ```ylim``` in the plot function, what happens?
+
+## Compare proportions
+
+### Chi-squared test
+association between two categorical variables
+Info in Word R version here
+
+Chi	Square:
+Allows	you	to	test	whether	there	is	a	relationship	between	two	variables. BUT,	it	does	not	tell	
+you	the	direction	or the size of	the	relationship.	
+Null	Hypothesis:	There	is	no	relationship	between	the two	variables.
+When	you	reject	the	null	hypothesis	with	a	Chi-Square,	you	are	saying	that	there	is	a	
+relationship	between	the	two	variables.
+
+The chi-square test is used to find if two nominal or ordinal (both categorical) variables are independent. For example to test if people who don't smoke exercise more you can use the chi-square test. R has a built-in dataset where students smoking and exercise habits have been recorded. Load in the dataset:
+
+```{r load smoking dataset, message=FALSE}
+library(MASS) 
+head(survey)
+```
+
+The chi-square test is done on [contingency tables](https://en.wikipedia.org/wiki/Contingency_table#Example). 
+You can construct a contingency table with:
+
+```{r contigency table}
+tblSmoke = table(survey$Smoke, survey$Exer) 
+```
+
+After making the contingency table simply do
+
+```{r chisquare, results='hide', warning= FALSE}
+chisq.test(tblSmoke)
+```
+
+___Q21. What is the null hypothesis and do you reject it (at .05 significance level)?___
+<!--
+As the p-value 0.4828 is greater than the .05 significance level, we do not reject the null hypothesis that the smoking habit is independent of the exercise level of the students. 
+-->
+
+Use ```?survey``` to see the description of the columns. 
+
+___Q22. Use the chi-square test to test if which hand is on top after clapping and exercise levels are independent. What is the null hypothesis and do you reject it (at .05 significance level)? Do you think this is correct?___
+
+```{r chisquare fold, results='hide', echo=FALSE, warning= FALSE}
+tblClap <- table(survey$Clap, survey$Exer)
+chisq.test(tblClap)
+```
+<!--
+As the p-value 0.009816 is lower than the .05 significance level, we reject the null hypothesis that which hand is on top after clapping is independent of the exercise level of the students. 
+-->
+
+
+### Fisher's exact test
+association between two categorical variables (small sample size)
+
+In pathway analysis (which you will on one of your next days), the Fisher Exact test is often used. Similarily to the chi-square test it is used for testing independence of categorical variables. It is often used when the cell sizes are small. 
+
+___Redo the chi-square exercises but instead use the Fisher Exact test, and note the differences___ See ```?fisher.test```
+
+```{r fisher, echo=FALSE, results='hide'}
+fisher.test(tblSmoke)
+fisher.test(tblClap)
+```
+
+
+# Dimensionality reduction
+
+## Principle component analysis
+# Normalization and data visualization
+In order to properly perform certain downstream analysis, such as principal component analysis (PCA), or clustering, we need to properly normalize the counts. 
+There are multiple ways in which we can approximate our counts to a normal-like distribution. The DESeq2 package provides two built in functions to normalize your data: 
+* Regularized logarithm, or rlog 
+* Variance stabilizing transformations, or VST
+
+These two transformations can take into account the different conditions for which the cells have been treated.
+Select blind = FALSE to not include the experimental design information. 
+Here, only one possible combination is given, but of course the other sample combinations can also be executed.
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+# Use the information in the column names to generate a data.frame comprising the sample information.
+names = colnames(exp)
+colData <- data.frame(row.names = names,
+                      type = str_split_fixed(names, "_", 3)[,1],
+                      sample = str_split_fixed(names, "_", 3)[,2],
+                      stimulation = str_split_fixed(names, "_", 3)[,3])
+
+# Add library size, which is the total ammount of gene reads per sample
+colData$libSize <- colSums(exp)
+
+# Make sure that the colnames of your count table are matching with the row names of your colData
+all(rownames(colData) %in% colnames(exp))
+
+# Save your countTable and colData
+write.csv(exp, file="./Data/countTable.csv")
+write.csv(colData, file="./Data/colData.csv")
+```
+
+
+```{r Normalization, message=FALSE, warning=FALSE}
+# Load packages
+library(DESeq2)
+library(ggplot2)
+library(ggsci)
+library(ggrepel)
+
+dds_stim <- DESeqDataSetFromMatrix(countData = exp,
+                              colData = colData,
+                              design = ~ stimulation+sample)
+
+vst_stim <- assay(vst(dds_stim, blind=FALSE))
+
+```
+
+## Principal component analysis (PCA)
+PCA will help assess which samples are more closely related to each other, and how much variation is found between samples.Here an example is given in which t180 and t180unstim are plotted in 1 PCA plot. 
+
+Can you also make a PCA plot of t0, t180unstim and t180 in one plot?
+
+```{r PCA, message=FALSE, fig.height= 5, fig.width= 12}
+# To calculate the components by sample we need to transpose our matrix of normalized gene expression 
+pcData <- prcomp(t(vst_stim))
+pcVar <- summary(pcData)
+# By getting the summary() of a prcomp object (in this case pcData) we can also obtain the total ammount of variance explained by each of the components.
+pcVar$importance
+# We can then extract the variance explained by components 1 and 2. 
+varPC1 <- pcVar$importance[2,1]
+varPC2 <- pcVar$importance[2,2]
+
+pcPlotData <- data.frame(pcData$x[,1:4], colData[rownames(pcData$x),])
+head(pcPlotData)
+
+pcaPlot_stim <- ggplot(pcPlotData, aes(x=PC1 , y=PC2 , color=stimulation))+
+                  geom_jitter(alpha=0.6)+
+                  xlab(paste0("PC1 explained variance = ", varPC1*100, "%"))+
+                  ylab(paste0("PC2 explained variance = ", varPC2*100, "%"))+
+                  scale_color_aaas()+
+                  theme_bw()+
+                  theme(legend.position = "bottom")+
+                  guides(col = guide_legend(ncol = 8))
+
+# display the pca plot in "Plots"
+pcaPlot_stim
+
+# to save your file to pdf format in your working directory do
+pdf("PCA_GM12878.pdf", height = 7.5, width=7.5)
+pcaPlot_stim
+dev.off()
+
+
+```
+
+Clearly the the t180unstim samples are not the same. However, the difference between the t180 and t180unstim samples is still much greater. This is the stimulation effect, which is what we are interested in.
+
+What would we need to see how great the difference between the t180unstim samples really is and which one is a better representative of the "true" state?
+
+## Unsupervised clustering
+
+Alternatively, it's possible to asses the similarity between samples using an unsupervised clustering approach using the whole trancriptome to generate a distance matrix. 
+```{r Sample Clustering, message=FALSE, fig.height= 5, fig.width= 5}
+
+library(RColorBrewer)
+library(pheatmap)
+
+# Again we need to transpose our matrix to then calculate the distance between each of the samples.
+sampleDists <- dist(t(vst_stim))
+sampleDistMatrix <- as.matrix(sampleDists)
+
+# By using brewer.pal() we can generate a palette of colors, for more colors check (http://colorbrewer2.org/)
+colors <- colorRampPalette(brewer.pal(9, "GnBu"))(255)
+
+pheatmap(sampleDistMatrix, main = "Stimulation",
+         show_colnames = FALSE,
+         annotation = colData[,c("stimulation","sample")],
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors)
+
+
+```
+The heatmap shows a similar results to the PCA.
+
+Klopt helemaal, de stimulatie is van GM12878 B cellen met cytokine IL-21.
+De data laat zien dat alleen al het ‘handelen’ van de cellen een enorm effect heeft, maar dat er nog steeds een stimulatie specifieke component is.
+Leermomentje voor de studenten naast PCA analyse zelf: PCA is heel belangrijk om te begrijpen of je de juiste controles gebruikt als je big data analyse doet.
