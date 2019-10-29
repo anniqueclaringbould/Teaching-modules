@@ -17,6 +17,7 @@ Teaching modules given by the UMCG department of Genetics
 * [R course - day 3](R-course/R_day3_plotting.html)
 	* [R course - day 2 answers](R-course/R_day3_plotting_answers.html)
 -->
+<br><br>
 
 ### Practical workshops about specific topics
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
