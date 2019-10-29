@@ -20,8 +20,8 @@ Teaching modules given by the UMCG department of Genetics
 
 <!--
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
--->
 <br>
+-->
 * [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)	
 	* [Differential gene expression answers](Practicals/differential-expression/rnaseq_diff_expr.html)
 <br>
