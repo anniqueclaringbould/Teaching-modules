@@ -811,6 +811,8 @@ In order to perform certain downstream analyses, such as principal component ana
 Let's start by saving some information regarding the gene expression dataset as `colData`:
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 # Use the information in the column names to generate a data.frame comprising the sample information.
+library(stringr)
+
 names = colnames(exp)
 colData <- data.frame(row.names = names,
                       type = str_split_fixed(names, "_", 3)[,1],
@@ -852,7 +854,9 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("DESeq2")
 
-library(DESeq2)
+#or try
+source("https://bioconductor.org/biocLite.R")
+biocLite("DESeq2")
 ```
 
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}

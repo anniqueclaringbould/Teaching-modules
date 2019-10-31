@@ -1285,17 +1285,19 @@ summary {
 <p>In order to perform certain downstream analyses, such as principal component analysis (PCA), or clustering, we need to properly normalise the expression counts first. <br></p>
 <p>Let’s start by saving some information regarding the gene expression dataset as <code>colData</code>:</p>
 <div class="sourceCode" id="cb127"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb127-1" data-line-number="1"><span class="co"># Use the information in the column names to generate a data.frame comprising the sample information.</span></a>
-<a class="sourceLine" id="cb127-2" data-line-number="2">names =<span class="st"> </span><span class="kw">colnames</span>(exp)</a>
-<a class="sourceLine" id="cb127-3" data-line-number="3">colData &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">row.names =</span> names,</a>
-<a class="sourceLine" id="cb127-4" data-line-number="4">                      <span class="dt">type =</span> <span class="kw">str_split_fixed</span>(names, <span class="st">&quot;_&quot;</span>, <span class="dv">3</span>)[,<span class="dv">1</span>],</a>
-<a class="sourceLine" id="cb127-5" data-line-number="5">                      <span class="dt">sample =</span> <span class="kw">str_split_fixed</span>(names, <span class="st">&quot;_&quot;</span>, <span class="dv">3</span>)[,<span class="dv">2</span>],</a>
-<a class="sourceLine" id="cb127-6" data-line-number="6">                      <span class="dt">stimulation =</span> <span class="kw">str_split_fixed</span>(names, <span class="st">&quot;_&quot;</span>, <span class="dv">3</span>)[,<span class="dv">3</span>])</a>
-<a class="sourceLine" id="cb127-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb127-8" data-line-number="8"><span class="co"># Add library size, which is the total ammount of gene reads per sample</span></a>
-<a class="sourceLine" id="cb127-9" data-line-number="9">colData<span class="op">$</span>libSize &lt;-<span class="st"> </span><span class="kw">colSums</span>(exp)</a>
-<a class="sourceLine" id="cb127-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb127-11" data-line-number="11"><span class="co"># Make sure that the colnames of your count table are matching with the row names of your colData</span></a>
-<a class="sourceLine" id="cb127-12" data-line-number="12"><span class="kw">all</span>(<span class="kw">rownames</span>(colData) <span class="op">%in%</span><span class="st"> </span><span class="kw">colnames</span>(exp))</a></code></pre></div>
+<a class="sourceLine" id="cb127-2" data-line-number="2"><span class="kw">library</span>(stringr)</a>
+<a class="sourceLine" id="cb127-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb127-4" data-line-number="4">names =<span class="st"> </span><span class="kw">colnames</span>(exp)</a>
+<a class="sourceLine" id="cb127-5" data-line-number="5">colData &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">row.names =</span> names,</a>
+<a class="sourceLine" id="cb127-6" data-line-number="6">                      <span class="dt">type =</span> <span class="kw">str_split_fixed</span>(names, <span class="st">&quot;_&quot;</span>, <span class="dv">3</span>)[,<span class="dv">1</span>],</a>
+<a class="sourceLine" id="cb127-7" data-line-number="7">                      <span class="dt">sample =</span> <span class="kw">str_split_fixed</span>(names, <span class="st">&quot;_&quot;</span>, <span class="dv">3</span>)[,<span class="dv">2</span>],</a>
+<a class="sourceLine" id="cb127-8" data-line-number="8">                      <span class="dt">stimulation =</span> <span class="kw">str_split_fixed</span>(names, <span class="st">&quot;_&quot;</span>, <span class="dv">3</span>)[,<span class="dv">3</span>])</a>
+<a class="sourceLine" id="cb127-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb127-10" data-line-number="10"><span class="co"># Add library size, which is the total ammount of gene reads per sample</span></a>
+<a class="sourceLine" id="cb127-11" data-line-number="11">colData<span class="op">$</span>libSize &lt;-<span class="st"> </span><span class="kw">colSums</span>(exp)</a>
+<a class="sourceLine" id="cb127-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb127-13" data-line-number="13"><span class="co"># Make sure that the colnames of your count table are matching with the row names of your colData</span></a>
+<a class="sourceLine" id="cb127-14" data-line-number="14"><span class="kw">all</span>(<span class="kw">rownames</span>(colData) <span class="op">%in%</span><span class="st"> </span><span class="kw">colnames</span>(exp))</a></code></pre></div>
 <pre><code>## [1] TRUE</code></pre>
 <p><br></p>
 <p><strong>Q29</strong>: What information can you find in the newly made column <code>libSize</code>? What’s the minimum and maximum value of <code>libSize</code>?</p>
@@ -1322,7 +1324,9 @@ summary {
 <a class="sourceLine" id="cb134-10" data-line-number="10"></a>
 <a class="sourceLine" id="cb134-11" data-line-number="11">BiocManager<span class="op">::</span><span class="kw">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</a>
 <a class="sourceLine" id="cb134-12" data-line-number="12"></a>
-<a class="sourceLine" id="cb134-13" data-line-number="13"><span class="kw">library</span>(DESeq2)</a></code></pre></div>
+<a class="sourceLine" id="cb134-13" data-line-number="13"><span class="co">#or try</span></a>
+<a class="sourceLine" id="cb134-14" data-line-number="14"><span class="kw">source</span>(<span class="st">&quot;https://bioconductor.org/biocLite.R&quot;</span>)</a>
+<a class="sourceLine" id="cb134-15" data-line-number="15"><span class="kw">biocLite</span>(<span class="st">&quot;DESeq2&quot;</span>)</a></code></pre></div>
 <p><br></p>
 <p>There are multiple ways in which we can approximate our counts to a normal-like distribution. The <strong>DESeq2</strong> package provides two built-in functions to normalise your data:</p>
 <ul>
