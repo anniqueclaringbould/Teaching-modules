@@ -44,7 +44,7 @@ Now we have loaded the **ggplot2** library lots of new methods are available. Th
 
 The first argument in `ggplot()` is the dataset you want to use to generate the plot, in this case we're using the **iris** dataset again. The second argument is the `aes()` or aesthetic function, where you can set which variables of the dataset are used for the available visual properties. In the case of this scatterplot we're only interested in the x and y position of each data point.
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 ggplot(iris, aes(x=Sepal.Length, y=Sepal.Width))
 ```
 <br>
@@ -58,7 +58,7 @@ ggplot(iris, aes(x=Sepal.Length, y=Sepal.Width)) +
 <br>
 
 **Q1**: Make a scatterplot between the Petal Length and Petal Width. How many clusters do you see?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 1
 #Code
 ggplot(iris, aes(x=Petal.Length, y=Petal.Width)) + 
@@ -71,7 +71,7 @@ ggplot(iris, aes(x=Petal.Length, y=Petal.Width)) +
 
 ## Histrograms
 One of the first things to check when you are visualy exploring a dataset is the distribution of its variables. A common way to do this is by plotting a histogram. With **ggplot** you can do this easily by using `geom_histogram()`. For instance we can look at the distribution of petal lengths with the following command:
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 ggplot(iris, aes(x=Petal.Length)) + 
   geom_histogram()
 ```
@@ -80,7 +80,7 @@ ggplot(iris, aes(x=Petal.Length)) +
 As you can see, `aes()` function now only takes one argument (x) since we are only interested in the distribution of one variable.
 
 The length of every bin is the number of observations within the range (width) of each bin. You can customize the width of each bin with the `binwidth` argument. This might be useful if the dataset contains many more observations:
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 ggplot(iris, aes(x=Petal.Length)) + 
   geom_histogram(binwidth = 0.05)
 ```
@@ -91,7 +91,7 @@ ggplot(iris, aes(x=Petal.Length)) +
 * Make a histogram of the Sepal length
 * Use `binwidth = 0.05`
 * By looking at  the plot: what sepal length is most prevalent?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 2
 #Code
 ggplot(iris, aes(x=Sepal.Length)) + 
@@ -115,7 +115,7 @@ Since the iris dataset includes different species we can use boxplots to compare
 * Use `+ geom_boxplot()`
 * Specify that the aesthetic for x-axis are `Species`, and for y-axis the sepal width
 * What species has the largest median sepal width?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 3
 #Code
 ggplot(iris, aes(x=Species, y=Sepal.Width)) + 
@@ -129,7 +129,7 @@ ggplot(iris, aes(x=Species, y=Sepal.Width)) +
 ## Saving plots
 
 In **ggplot2** it is possible to add extra options to a plot by simply on top of the ```ggplot()``` function. Therefore it can be convenient to store the result of ```ggplot()``` inside a variable. For example:
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 plot1 <- ggplot(iris, aes(x=Species, y=Sepal.Width))
 plot2 <- plot1 + geom_boxplot()
 plot3 <- plot2 + theme_bw()
@@ -138,7 +138,7 @@ plot3 <- plot2 + theme_bw()
 Notice that this won't generate any graphical output. Like with any assignment, this will not immediately print the content of the variable `plot3`. 
 
 **Q4** Consecutively type `plot1`, `plot2`, `plot3`. What is added in each plot?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 4
 #Code
 plot1
@@ -156,7 +156,7 @@ plot3
 
 * Make a boxplot of sepal length
 * Save it under the name `sepal.length.boxplot`
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 5
 #Code
 plot1 <- ggplot(iris, aes(x=Species, y=Sepal.Length))
@@ -180,7 +180,7 @@ Now we have stored the plot, we can add shapes to the plot by adding to the `sep
 * Make the line stand out by adding `color = "red"` within the brackets of `geom_hline()`
 * Do you think the mean is representative of all species? Does it overlap with the 'whiskers' of the boxplot?
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 6
 #Code
 
@@ -207,7 +207,7 @@ Previously we have determined if there was a significant differences in petal le
 * Run a t-test to determine the difference in means of sepal length between *Iris virginica* and *Iris versicolor*
 * Store the p-value in a variable called `t.test.p.value`
 * What is the p-value?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 7
 #Code
 t.test.p.value <- t.test(iris[iris$Species == 'virginica',]$Sepal.Length, iris[iris$Species == 'versicolor',]$Sepal.Length)$p.value
@@ -229,7 +229,7 @@ To annotate the boxplot with the p-value of the t-test, we can use the `annotate
   `+ annotate("text", x = 1.5, y = 8, label = p.value.label)`
 * Adjust the position of the `p.value.label` to the right lower
   *Hint*: play around with the values of x and y in `annotate()` until the label is placed where you like it
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 8
 #Code
 # Round the p-value to 3 digits
@@ -247,7 +247,7 @@ While **ggplot2** makes good plots right out off the box, they are also highly a
 
 Basically every line, colour, shape or text in the plot can be adjusted. Let's enhance our boxplot a bit by adding the actual data points as dots by adding `geom_point()`.
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 sepal.length.boxplot + 
   geom_point()
 ```
@@ -268,7 +268,7 @@ Because we are plotting in one dimension, the above statement will draw all dots
 * Check out all kinds of color names in R in this [overview] (http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
 * If you make the same plot a few times in a row, are they exactly the same? Why (not)?
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 9
 #Code
 sepal.length.boxplot.jitter <- sepal.length.boxplot + 
@@ -300,7 +300,7 @@ The text of the label on the y axis "Sepal.Length" is not despriptive enough. Al
 * Change the axis labels to be larger (see example code above)
 * Change the y-axis label text to include the units: `"Sepal length (cm)"`
 * Store the new plot as ```sepal.length.boxplot.labels``` 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 10
 #Code
 sepal.length.boxplot.labels <- sepal.length.boxplot.jitter + 
@@ -319,7 +319,7 @@ The size of the text of the species beneath the boxplots can also be increased b
 * Change the x-axis species text size using `theme(axis.text.x = element_text(size = 3))`
 * What's wrong?
 * Adjust the mistake and save the result as `sepal.length.boxplot.sizes`
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 11
 #Code
 sepal.length.boxplot.labels + theme(axis.text.x = element_text(size = 3))
@@ -333,7 +333,7 @@ sepal.length.boxplot.sizes
 ```
 <br>
 To make a beter distinction between the two boxplot we could also color the boxes:
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 sepal.length.boxplot.sizes + 
   geom_boxplot(aes(fill=Species))
 ```
@@ -348,7 +348,7 @@ As you can see the boxplot is drawn on top of `geom_point`, this is because we h
 * Call the new boxplot `sepal.length.boxplot.new`
 * Change the colour of the dots if you do not like the combination with the box plot colours
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 12
 #Code
 sepal.length.boxplot.new <- ggplot(iris, aes(x=Species, y=Sepal.Length,fill=Species)) + 
@@ -363,7 +363,7 @@ sepal.length.boxplot.new <- ggplot(iris, aes(x=Species, y=Sepal.Length,fill=Spec
 
 Not everyone likes the grey background. An easy way to remove these (and to make the plot look less like a default ggplot) is to add `theme_bw()`:
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 sepal.length.boxplot.new + 
   theme_bw()
 ```
@@ -396,7 +396,7 @@ iris.melt <- melt(iris, id.vars = "Species")
 * What does each of the columns indicate?
 * How is this different from the initial dataset?
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 13
 #Code
 head(iris.melt)
@@ -415,7 +415,7 @@ dim(iris.melt)
 Now that we have melted our data we can use the `facet_wrap()` and `facet_grid()` functions. The facet approach partitions a plot into a matrix of panels. Each panel shows a different subset of the data.
 
 We can plot the molten data frame by plotting the distribution of every variable as boxplots:
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 ggplot(iris.melt, aes(x=variable, y=value)) + 
   geom_boxplot()
 ```
@@ -425,7 +425,7 @@ As you can see, these boxplots combine the values of all three iris species for 
 
 If we want to plot the distribution of every species separately we can use the `facet_grid()` function. You have to specify a formula with the rows (of the plot matrix) on the left hand side of `~` and the columns (of the plot matrix) on the right hand side of `~`: `facet_grid(ROWVARIABLE~COLUMNVARIABLE)`. You can keep one of the two variables empty as well by adding `.`:
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 ggplot(iris.melt, aes(x=variable, y=value)) + 
   geom_boxplot() + 
   facet_grid(Species~.)
@@ -437,7 +437,7 @@ ggplot(iris.melt, aes(x=variable, y=value)) +
 * Make the same plot as above, but this time put the species as row variable
 * What changes?
 * Which plot makes it easier to compare across species?
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 14
 #Code
 ggplot(iris.melt, aes(x=variable, y=value)) + 
@@ -454,7 +454,7 @@ It's probably more informative to group the variables instead of the species so 
 
 **Q15** Use the `facet_grid()` function so that that the boxplots are grouped by the measured variables. The plot should look like this:
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 15
 #Code
 ggplot(iris.melt, aes(x=Species, y=value)) + geom_boxplot() + facet_grid(~variable)
@@ -475,7 +475,7 @@ We can make violin plots using the `geom_violin()` function from **ggplot2**.
 * The final plot should look like below
 * What do you notice in the distribution of the petal length across the three species?
 
-```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 16
 #Code
 ggplot(iris.melt, aes(x=Species, y=value, fill=Species)) + 
@@ -509,8 +509,8 @@ The third parameter is the value it should return if False
 Here is the example we described:
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 outlier <- ifelse(iris$Sepal.Length > 7.6, "Outlier", "Non-outlier")
-#iris$Sepal.Length
-#outlier
+iris$Sepal.Length
+outlier
 ```
 <br>
 
@@ -522,12 +522,12 @@ The outlier vector can then be given as a vector to the color parameter. Using `
 * Run the code below
 * Do you think this cut-off really identifies outliers?
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 ggplot(iris, aes(x=Sepal.Length, y=Sepal.Width, color=outlier)) +
   geom_point() +
   geom_text(aes(label = Sepal.Width), data = iris[iris$Sepal.Length>7.6,], color="black")
 ```
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 17
 #Code
 ggplot(iris, aes(x=Sepal.Length, y=Sepal.Width, color=outlier)) +
@@ -552,7 +552,7 @@ Look again at the Iris correlations using `cor(iris[1:4])` and specifically look
 * Plot the best fitting linear model line by adding `+ geom_smooth(method = "lm")`
 * What is the direction of the line? Is that in line with the negative correlation coefficient?
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 18
 #Code
 ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) + 
@@ -571,7 +571,7 @@ ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width)) +
 * Add `scales = "free_x"` as parameter to the `facet_grid()` function
 * What is the difference before and after adding this?
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 19
 #Code
 ggplot(data = iris, aes(Sepal.Length, Sepal.Width)) + 
