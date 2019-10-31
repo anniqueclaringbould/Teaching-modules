@@ -8,7 +8,7 @@ Teaching modules given by the UMCG department of Genetics
 	* [R course - weight data](R-course/data/weight.Rdata)
 	* [R course - new data](R-course/data/newdata.Rdata)
 	* [R course - myfirstfile](R-course/data/myfirstfile.txt)
-	* [R course - day 1 answers](R-course/R_day1_intro_answers.html)
+	* [R course - day 1 answers](R-course/R_day1_intro_with_answers.html)
 * [R course - day 2 - stats](R-course/R_day2_stats.html)
 	* [R course - expression data](R-course/data/BigData_backup_GM12878-IL21.csv)
 	
