@@ -283,7 +283,7 @@ What data type are `c`, `e`, and `f`? What is the difference between `e` and `f`
 
 <br>
 
-You can convert a variable into a numerical data type using `as.numerical(x)` and into a character using `as.character(x)`.<br>
+You can convert a variable into a numeric data type using `as.numeric(x)` and into a character using `as.character(x)`.<br>
 
 **Q4**: Run the following command:
 ```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}

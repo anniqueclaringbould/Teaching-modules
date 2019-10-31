@@ -283,7 +283,7 @@ What data type are `c`, `e`, and `f`? What is the difference between `e` and `f`
 
 <br>
 
-You can convert a variable into a numerical data type using `as.numerical(x)` and into a character using `as.character(x)`.<br>
+You can convert a variable into a numerical data type using `as.numeric(x)` and into a character using `as.character(x)`.<br>
 
 **Q4**: Run the following command:
 ```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
@@ -295,7 +295,7 @@ What data types are `e` and `f` now?
 <br><br>
 
 ## Predefined functions
-There are many predefined functions in R base library that will be useful when programming in R. Here are some examples of numerical functions with their description written as a comment, preceeded by `#`. These functions will only work if `x` is numerical. In documentation about R and in this tutorial, you can recognise that someone is discussing a predefined function when there is a combination of letters followed by `()`. The brackets indicate that you should add something in between the brackets to run the function. For example:
+There are many predefined functions in R base library that will be useful when programming in R. Here are some examples of numerical functions with their description written as a comment, preceeded by `#`. These functions will only work if `x` is numeric. In documentation about R and in this tutorial, you can recognise that someone is discussing a predefined function when there is a combination of letters followed by `()`. The brackets indicate that you should add something in between the brackets to run the function. For example:
 ```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 abs(x) #absolute value of x
 sqrt(x) #square root of x
