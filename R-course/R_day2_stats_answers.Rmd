@@ -138,7 +138,7 @@ A t-test is a parametric test, and therefore is assumes that the length of the p
 ```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
 t.test(virg_pl, vers_pl)
 ```
-What is our null hypothesis, and given our t-test result, can we support or reject it?
+What is our null hypothesis, and given our t-test result, can we reject it?
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 5
 #Code
@@ -218,7 +218,7 @@ The Wilcoxon test merges the data together, ranks each point from lowest to high
 
 **Q8**: 
 
-* Make a plot of the real values using the code below
+* Make a plot of the values (including the changes you just added) using the code below
 * Read the stripchart help page
 * When would you typically use a stripchart?
 
@@ -256,15 +256,18 @@ As you can see in your plot, there is a big gap between the outlier points that 
 # 1 = the number of rows, 2 = the number of columns
 par(mfrow=c(1,2))
 
+#select the first 50 numbers using seq(along=virg_pl)
+#the along argument gives the number (50) of observations you want to select
+#select the last 50 numbers using the negative seq: -seq(along=virg_pl)
 xrank <- rank(c(virg_pl,vers_pl))[seq(along=virg_pl)]
-yrank <- rank(c(virg_pl,vers_pl))[-seq(along=vers_pl)]
+yrank <- rank(c(virg_pl,vers_pl))[-seq(along=virg_pl)]
+
 # plot the previous plot for comparison
 stripchart(list(virg_pl, vers_pl),
            vertical=TRUE,
            ylab="Observations",
            pch=21,
            bg=1)
-abline(h=0)
 stripchart(list(xrank,yrank),
            vertical=TRUE,
            ylab="Ranks",
@@ -351,7 +354,7 @@ The same test without the assumption of normality (i.e. non-parametric test) is 
 * Save the output in `model3`
 * Is there a difference in significance between `model1` and `model2`?
 * What is the p-value for `model3`?
-* What can you conclude about the relationship between sepal length and width and iris species?
+* What can you conclude about the relationship between sepal length and iris species? Is the species important for the sepal length? How about for the sepal width?
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 #Question 11
 #Code
@@ -385,6 +388,7 @@ We will use gene expression data for this part of the tutorial. The data describ
 * Copy the following commands to import and examine the data
 * Fill in the missing parts:
 * The dataset contains gene expression for the sample GM12878 on **?** genes
+  * *Hint*: the 'ENSG....' numbers are gene identifiers
 * There are **?** columns (experiments)
 * The time points used in this experiment are t=0 and t=180: **TRUE/FALSE**
 * The experiment has been done *in triplo*: **TRUE/FALSE**
@@ -496,7 +500,7 @@ table(sport, food)
 You might want to figure out whether soccer players are more likely to be vegetarian, and as you can appreciate in the table, that means you compare the proportion of vegetarian soccer players to the proportion of vegetarion volleyball players.
 <br><br>
 
-### Non-parametric: Chi-square test
+### Chi-square test
 The Chi-square test allows you to test whether there is a relationship between two variables, but it does not tell you about the direction and size of the relationship.<br>
 *Null Hypothesis*: There is no relationship between the two variables
 <br>
@@ -835,6 +839,21 @@ min(colData$libSize)
 <br>
 
 Install and load the following packages: **DESeq2**, **ggplot2**, **ggsci**, **ggrepel**, **RColorBrewer**, **pheatmap**
+```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=TRUE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("GenomeInfoDbData")
+
+library(GenomeInfoDbData)
+library(DESeq2)
+```
+
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
 # Load packages
 library(DESeq2)
