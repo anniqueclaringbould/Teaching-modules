@@ -845,14 +845,15 @@ Install and load the following packages: **DESeq2**, **ggplot2**, **ggsci**, **g
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-BiocManager::install("DESeq2")
+BiocManager::install("GenomeInfoDbData")
+
+library(GenomeInfoDbData)
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
-BiocManager::install("GenomeInfoDbData")
+BiocManager::install("DESeq2")
 
-library(GenomeInfoDbData)
 library(DESeq2)
 ```
 

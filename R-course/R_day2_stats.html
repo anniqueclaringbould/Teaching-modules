@@ -874,15 +874,16 @@ summary {
 <div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="cf">if</span> (<span class="op">!</span><span class="kw">requireNamespace</span>(<span class="st">&quot;BiocManager&quot;</span>, <span class="dt">quietly =</span> <span class="ot">TRUE</span>))</a>
 <a class="sourceLine" id="cb29-2" data-line-number="2">    <span class="kw">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</a>
 <a class="sourceLine" id="cb29-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb29-4" data-line-number="4">BiocManager<span class="op">::</span><span class="kw">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</a>
+<a class="sourceLine" id="cb29-4" data-line-number="4">BiocManager<span class="op">::</span><span class="kw">install</span>(<span class="st">&quot;GenomeInfoDbData&quot;</span>)</a>
 <a class="sourceLine" id="cb29-5" data-line-number="5"></a>
-<a class="sourceLine" id="cb29-6" data-line-number="6"><span class="cf">if</span> (<span class="op">!</span><span class="kw">requireNamespace</span>(<span class="st">&quot;BiocManager&quot;</span>, <span class="dt">quietly =</span> <span class="ot">TRUE</span>))</a>
-<a class="sourceLine" id="cb29-7" data-line-number="7">    <span class="kw">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</a>
-<a class="sourceLine" id="cb29-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb29-9" data-line-number="9">BiocManager<span class="op">::</span><span class="kw">install</span>(<span class="st">&quot;GenomeInfoDbData&quot;</span>)</a>
+<a class="sourceLine" id="cb29-6" data-line-number="6"><span class="kw">library</span>(GenomeInfoDbData)</a>
+<a class="sourceLine" id="cb29-7" data-line-number="7"></a>
+<a class="sourceLine" id="cb29-8" data-line-number="8"><span class="cf">if</span> (<span class="op">!</span><span class="kw">requireNamespace</span>(<span class="st">&quot;BiocManager&quot;</span>, <span class="dt">quietly =</span> <span class="ot">TRUE</span>))</a>
+<a class="sourceLine" id="cb29-9" data-line-number="9">    <span class="kw">install.packages</span>(<span class="st">&quot;BiocManager&quot;</span>)</a>
 <a class="sourceLine" id="cb29-10" data-line-number="10"></a>
-<a class="sourceLine" id="cb29-11" data-line-number="11"><span class="kw">library</span>(GenomeInfoDbData)</a>
-<a class="sourceLine" id="cb29-12" data-line-number="12"><span class="kw">library</span>(DESeq2)</a></code></pre></div>
+<a class="sourceLine" id="cb29-11" data-line-number="11">BiocManager<span class="op">::</span><span class="kw">install</span>(<span class="st">&quot;DESeq2&quot;</span>)</a>
+<a class="sourceLine" id="cb29-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb29-13" data-line-number="13"><span class="kw">library</span>(DESeq2)</a></code></pre></div>
 <p><br></p>
 <p>There are multiple ways in which we can approximate our counts to a normal-like distribution. The <strong>DESeq2</strong> package provides two built-in functions to normalise your data:</p>
 <ul>
