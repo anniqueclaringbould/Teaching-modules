@@ -20,6 +20,7 @@ Teaching modules given by the UMCG department of Genetics
 <br><br>
 
 ### Practical workshops about specific topics
+* [GWAS - for beginners to R](Practicals/GWAS/gwas_tutorial_2019_easy.html)
 * [GWAS](Practicals/GWAS/gwas_tutorial_2019.html)
 	* [Genotype files - .bed](Practicals/GWAS/celiac_gwas/celiac_gwas.bed)
 	* [Genotype files - .bim](Practicals/GWAS/celiac_gwas/celiac_gwas.bim)
