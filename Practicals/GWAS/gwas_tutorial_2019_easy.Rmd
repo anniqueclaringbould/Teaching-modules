@@ -456,7 +456,7 @@ minor_allele_frequency_geno_qc <- minor_allele_frequency_per_snp[!missingness_fi
 ```
 <br>
 
-**Q9**: After quality control per SNP, how many SNPs have been filtered out?
+**Q9**: After quality control per SNP, how many SNPs remain?
 ```{r, message=FALSE, warning=FALSE, eval=FALSE, echo=FALSE }
 #Check how many SNPs and individuals remain after quality control
 dim(genotype_matrix_geno_qc)
