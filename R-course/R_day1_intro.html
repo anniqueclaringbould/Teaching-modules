@@ -692,7 +692,7 @@ A string, used to save words or phrases
 <a class="sourceLine" id="cb17-4" data-line-number="4"><span class="kw">class</span>(c)</a></code></pre></div>
 <p>What data type are <code>c</code>, <code>e</code>, and <code>f</code>? What is the difference between <code>e</code> and <code>f</code>?</p>
 <p><br></p>
-<p>You can convert a variable into a numerical data type using <code>as.numerical(x)</code> and into a character using <code>as.character(x)</code>.<br></p>
+<p>You can convert a variable into a numerical data type using <code>as.numeric(x)</code> and into a character using <code>as.character(x)</code>.<br></p>
 <p><strong>Q4</strong>: Run the following command:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1">e &lt;-<span class="st"> </span><span class="kw">as.character</span>(e)</a>
 <a class="sourceLine" id="cb18-2" data-line-number="2">f &lt;-<span class="st"> </span><span class="kw">as.numeric</span>(f)</a></code></pre></div>
@@ -701,7 +701,7 @@ A string, used to save words or phrases
 </div>
 <div id="predefined-functions" class="section level2">
 <h2><span class="header-section-number">2.3</span> Predefined functions</h2>
-<p>There are many predefined functions in R base library that will be useful when programming in R. Here are some examples of numerical functions with their description written as a comment, preceeded by <code>#</code>. These functions will only work if <code>x</code> is numerical. In documentation about R and in this tutorial, you can recognise that someone is discussing a predefined function when there is a combination of letters followed by <code>()</code>. The brackets indicate that you should add something in between the brackets to run the function. For example:</p>
+<p>There are many predefined functions in R base library that will be useful when programming in R. Here are some examples of numerical functions with their description written as a comment, preceeded by <code>#</code>. These functions will only work if <code>x</code> is numeric. In documentation about R and in this tutorial, you can recognise that someone is discussing a predefined function when there is a combination of letters followed by <code>()</code>. The brackets indicate that you should add something in between the brackets to run the function. For example:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">abs</span>(x) <span class="co">#absolute value of x</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2"><span class="kw">sqrt</span>(x) <span class="co">#square root of x</span></a>
 <a class="sourceLine" id="cb19-3" data-line-number="3"><span class="kw">ceiling</span>(x) <span class="co">#rounding x up to the first integer, try with ceiling(2.1246)</span></a>
@@ -1053,7 +1053,7 @@ A collection of data structures. The components of a list can be simply vectors�
 <p>The column names of a data frame can be changed with the function <code>colnames()</code> or <code>names()</code>. Similarly row names can be adapted with the function <code>rownames()</code>.</p>
 <p><strong>Q22</strong>:</p>
 <ul>
-<li>Change the column names of mydata to “AGE”, “GENDER”, “WEIGHT”</li>
+<li>Change the column names of mydataextra to “AGE”, “GENDER”, “WEIGHT”</li>
 <li>Change the row names to “Bob”, “Mary”, “Jason”, “Susan”</li>
 <li>Like with matrices and arrays certain elements can be extracted from the data frame using either <code>mydataextra[3,1]</code> or <code>mydataextra[&quot;Susan&quot;, &quot;GENDER&quot;]</code></li>
 <li>What’s the age of Jason?</li>

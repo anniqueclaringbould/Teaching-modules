@@ -74,7 +74,7 @@ table(iris$Species)
 <br><br>
 
 # Differences between 2 groups
-We would like to know if the Sepal length of *Iris virginica* is longer than the petal length of *Iris versicolor*. When asking these questions usually it refers to the averages of the groups. So first, look at the mean of both groups:
+We would like to know if the petal length of *Iris virginica* is longer than the petal length of *Iris versicolor*. When asking these questions usually it refers to the averages of the groups. So first, look at the mean of both groups:
 
 ```{r, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
 mean(iris[iris$Species == 'virginica',]$Petal.Length)

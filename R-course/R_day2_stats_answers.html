@@ -521,7 +521,7 @@ summary {
 </div>
 <div id="differences-between-2-groups" class="section level1">
 <h1><span class="header-section-number">2</span> Differences between 2 groups</h1>
-<p>We would like to know if the Sepal length of <em>Iris virginica</em> is longer than the petal length of <em>Iris versicolor</em>. When asking these questions usually it refers to the averages of the groups. So first, look at the mean of both groups:</p>
+<p>We would like to know if the petal length of <em>Iris virginica</em> is longer than the petal length of <em>Iris versicolor</em>. When asking these questions usually it refers to the averages of the groups. So first, look at the mean of both groups:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">mean</span>(iris[iris<span class="op">$</span>Species <span class="op">==</span><span class="st"> 'virginica'</span>,]<span class="op">$</span>Petal.Length)</a></code></pre></div>
 <pre><code>## [1] 5.552</code></pre>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">mean</span>(iris[iris<span class="op">$</span>Species <span class="op">==</span><span class="st"> 'versicolor'</span>,]<span class="op">$</span>Petal.Length)</a></code></pre></div>

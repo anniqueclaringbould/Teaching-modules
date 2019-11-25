@@ -858,7 +858,7 @@ The column names of a data frame can be changed with the function `colnames()` o
 
 **Q22**: 
 
-* Change the column names of mydata to "AGE", "GENDER", "WEIGHT"
+* Change the column names of mydataextra to "AGE", "GENDER", "WEIGHT"
 * Change the row names to "Bob", "Mary", "Jason", "Susan"
 * Like with matrices and arrays certain elements can be extracted from the data frame using either `mydataextra[3,1]` or `mydataextra["Susan", "GENDER"]`
 * What's the age of Jason?
