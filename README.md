@@ -22,25 +22,35 @@ Teaching modules given by the UMCG department of Genetics
 	* [Genotype files - .bed](Practicals/GWAS/celiac_gwas/celiac_gwas.bed)
 	* [Genotype files - .bim](Practicals/GWAS/celiac_gwas/celiac_gwas.bim)
 	* [Genotype files - .fam](Practicals/GWAS/celiac_gwas/celiac_gwas.fam)
+<!--
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 	* [Slides](Practicals/GWAS/20191106_AnniqueClaringbould_eQTL.pptx)
+-->
 <br>
 
-* [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)	
+* [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)
+<!--	
 	* [Differential gene expression answers](Practicals/differential-expression/rnaseq_diff_expr.html)
+-->
 <br>
 * [Pathway analysis](Practicals/pathway-analysis/Pathway_analysis_students.html)
+<!--
 	* [Pathway analysis answers](Practicals/pathway-analysis/Pathway_analysis.html)
+-->
 <br>
 * [eQTL mapping](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_adjusted270822018.html)
 	* [eQTL genotypes](Practicals/eQTLs/CeD_genotypes_adjusted27082018.txt)
 	* [eQTL gene positions](Practicals/eQTLs/gene_locations.txt)
 	* [eQTL gene expression](Practicals/eQTLs/geuvadis_normalised_gene_expression_adjusted27082018.txt.zip)
 	* [eQTL SNP positions](Practicals/eQTLs/snp_locations_CeD_adjusted27082018.txt)
+<!--
 	* [eQTL answers](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_answers_adjusted27082018.html)
+-->
 <br>
 * [Microbiome part 1](Practicals/microbiome/Day_1_2019.html)
+<!--
 	* [Microbiome part 1 answers](Practicals/microbiome/Day_1_with_code_2019.html)
+-->
 * [Microbiome part 2 (with answers)](Practicals/microbiome/Day_2_with_code.html)
 	* [FASTQ demo](Practicals/microbiome/demo.fastq.txt)
 	* [phenotypes](Practicals/microbiome/Phenotypes.txt)
