@@ -22,9 +22,9 @@ Teaching modules given by the UMCG department of Genetics
 	* [Genotype files - .bed](Practicals/GWAS/celiac_gwas/celiac_gwas.bed)
 	* [Genotype files - .bim](Practicals/GWAS/celiac_gwas/celiac_gwas.bim)
 	* [Genotype files - .fam](Practicals/GWAS/celiac_gwas/celiac_gwas.fam)
+	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 
 <!--
-	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 	* [Slides](Practicals/GWAS/20191106_AnniqueClaringbould_eQTL.pptx)
 -->
 
