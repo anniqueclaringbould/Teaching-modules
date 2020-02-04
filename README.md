@@ -22,6 +22,7 @@ Teaching modules given by the UMCG department of Genetics
 	* [Genotype files - .bed](Practicals/GWAS/celiac_gwas/celiac_gwas.bed)
 	* [Genotype files - .bim](Practicals/GWAS/celiac_gwas/celiac_gwas.bim)
 	* [Genotype files - .fam](Practicals/GWAS/celiac_gwas/celiac_gwas.fam)
+
 <!--
 	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 	* [Slides](Practicals/GWAS/20191106_AnniqueClaringbould_eQTL.pptx)
@@ -29,6 +30,7 @@ Teaching modules given by the UMCG department of Genetics
 <br>
 
 * [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)
+
 <!--	
 	* [Differential gene expression answers](Practicals/differential-expression/rnaseq_diff_expr.html)
 -->
