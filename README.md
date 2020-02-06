@@ -28,27 +28,18 @@ Teaching modules given by the UMCG department of Genetics
 	* [Slides](Practicals/GWAS/20191106_AnniqueClaringbould_eQTL.pptx)
 -->
 
-* [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)
-
-<!--	
+* [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)	
 	* [Differential gene expression answers](Practicals/differential-expression/rnaseq_diff_expr.html)
--->
 
 * [Pathway analysis](Practicals/pathway-analysis/Pathway_analysis_students.html)
-
-<!--
 	* [Pathway analysis answers](Practicals/pathway-analysis/Pathway_analysis.html)
--->
 
 * [eQTL mapping](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_adjusted270822018.html)
 	* [eQTL genotypes](Practicals/eQTLs/CeD_genotypes_adjusted27082018.txt)
 	* [eQTL gene positions](Practicals/eQTLs/gene_locations.txt)
 	* [eQTL gene expression](Practicals/eQTLs/geuvadis_normalised_gene_expression_adjusted27082018.txt.zip)
 	* [eQTL SNP positions](Practicals/eQTLs/snp_locations_CeD_adjusted27082018.txt)
-
-<!--
 	* [eQTL answers](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_answers_adjusted27082018.html)
--->
 
 * [Microbiome part 1](Practicals/microbiome/Day_1_2019.html)
 
