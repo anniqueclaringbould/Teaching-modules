@@ -52,7 +52,7 @@ Teaching modules given by the UMCG department of Genetics
 	* [phenotypes](Practicals/microbiome/Phenotypes.txt)
 	* [microbiome](Practicals/microbiome/Microbiome.txt)
 <br>
-* [Single-cell](Practicals/single-cell-RNA-seq)
+* [Single-cell](https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html)
 
 <!--
 * [Differential expression](Practicals/differential-expression/rnaseq_practical1.html) !NB 2 versions
