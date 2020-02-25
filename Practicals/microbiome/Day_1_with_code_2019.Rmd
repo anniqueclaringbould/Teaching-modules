@@ -35,14 +35,18 @@ In this course, we will use [MetaPhlAn v2.0][4]. In short, MetaPhlAn is a comput
 
 Import demo data to your session<br>
 ![Image of first page](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_1_galaxy.png)
+![Image of first page](/Users/anniqueclaringbould/Documents/Teaching/Department_Genetics_modules/github/Practicals/microbiome/page_1_galaxy.png)
 
 ![Image Galaxy session](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_2_galaxy.png)
+![Image Galaxy session](/Users/anniqueclaringbould/Documents/Teaching/Department_Genetics_modules/github/Practicals/microbiome/page_2_galaxy.png)
 
 The grey box indicates that the analysis is running. The process can take few minutes, you can refresh your browser to check the status <br>
 ![Image Galaxy running](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_running.png)
+![Image Galaxy running](/Users/anniqueclaringbould/Documents/Teaching/Department_Genetics_modules/github/Practicals/microbiome/page_running.png)
 
 Green!!! It's done! 
 ![Image Galaxy done](https://github.com/anniqueclaringbould/Teaching-modules/tree/master/Practicals/microbiome/page_finished.png)
+![Image Galaxy done](/Users/anniqueclaringbould/Documents/Teaching/Department_Genetics_modules/github/Practicals/microbiome/page_finished.png)
 <br><br><br><br>
 
 ## Module 2: Exploring microbiome data
