@@ -42,10 +42,7 @@ Teaching modules given by the UMCG department of Genetics
 	* [eQTL answers](Practicals/eQTLs/Mapping_eQTLs_celiac_disease_answers_adjusted27082018.html)
 
 * [Microbiome part 1](Practicals/microbiome/Day_1_2019.html)
-
-<!--
 	* [Microbiome part 1 answers](Practicals/microbiome/Day_1_with_code_2019.html)
--->
 
 * [Microbiome part 2 (with answers)](Practicals/microbiome/Day_2_with_code.html)
 	* [FASTQ demo](Practicals/microbiome/demo.fastq.txt)
@@ -53,6 +50,9 @@ Teaching modules given by the UMCG department of Genetics
 	* [microbiome](Practicals/microbiome/Microbiome.txt)
 <br>
 * [Single-cell](https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html)
+	* [Barcodes](Practicals/single-cell-RNA-seq/filtered_gene_bc_matrices/hg19/barcodes.tsv)
+	* [Genes](Practicals/single-cell-RNA-seq/filtered_gene_bc_matrices/hg19/genes.tsv)
+	* [Single-cell matrix](Practicals/single-cell-RNA-seq/filtered_gene_bc_matrices/hg19/matrix.mtx)
 
 <!--
 * [Differential expression](Practicals/differential-expression/rnaseq_practical1.html) !NB 2 versions
