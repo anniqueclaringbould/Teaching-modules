@@ -33,8 +33,10 @@ Teaching modules given by the UMCG department of Genetics
 	* [Genotype files - .bed](Practicals/GWAS/celiac_gwas/celiac_gwas.bed)
 	* [Genotype files - .bim](Practicals/GWAS/celiac_gwas/celiac_gwas.bim)
 	* [Genotype files - .fam](Practicals/GWAS/celiac_gwas/celiac_gwas.fam)
-	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
 	
+<!--
+	* [GWAS answers](Practicals/GWAS/gwas_tutorial_2019_answers.html)
+
 * [Differential gene expression](Practicals/differential-expression/rnaseq_diff_expr_student.html)	
 	* [Differential gene expression answers](Practicals/differential-expression/rnaseq_diff_expr.html)
 
@@ -61,7 +63,6 @@ Teaching modules given by the UMCG department of Genetics
 	* [Single-cell files - Genes](Practicals/single-cell-RNA-seq/filtered_gene_bc_matrices/hg19/genes.tsv)
 	* [Single-cell files - Matrix](Practicals/single-cell-RNA-seq/filtered_gene_bc_matrices/hg19/matrix.mtx)
 
-<!--
 * [Differential expression](Practicals/differential-expression/rnaseq_practical1.html) !NB 2 versions
 * [Pathway analysis](Practicals/pathway-analysis/Pathway_analysis_students.html) !NB bonus exercise
 	* [Slides](Practicals/pathway-analysis/Pathway_analysis.pptx) 
